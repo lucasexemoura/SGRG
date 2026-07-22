@@ -1,0 +1,867 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Dashboard Executivo
+        </h1>
+
+        <p class="subtitulo">
+            Visão geral das rondas gerenciais e pendências registradas.
+        </p>
+
+    </div>
+
+    <a href="/nova-ronda"
+       class="btn btn-primary">
+
+        <i class="fa-solid fa-plus"></i>
+
+        Nova Ronda
+
+    </a>
+
+</div>
+
+
+<div class="dashboard-cards">
+
+    <div class="dashboard-card">
+
+        <div class="icone azul">
+
+            <i class="fa-solid fa-clipboard-list"></i>
+
+        </div>
+
+        <div>
+
+            <small>Total de Rondas</small>
+
+            <h2>{{ total_rondas }}</h2>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone verde">
+
+            <i class="fa-solid fa-calendar-day"></i>
+
+        </div>
+
+        <div>
+
+            <small>Rondas Hoje</small>
+
+            <h2>{{ rondas_hoje }}</h2>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone roxo">
+
+            <i class="fa-solid fa-list-check"></i>
+
+        </div>
+
+        <div>
+
+            <small>Total de Pendências</small>
+
+            <h2>{{ total_pendencias }}</h2>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone cinza">
+
+            <i class="fa-solid fa-hospital"></i>
+
+        </div>
+
+        <div>
+
+            <small>Setores Ativos</small>
+
+            <h2>{{ total_setores }}</h2>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="dashboard-cards">
+
+    <a href="/pendencias?status=Aberta"
+       class="dashboard-card card-link">
+
+        <div class="icone azul">
+
+            <i class="fa-solid fa-folder-open"></i>
+
+        </div>
+
+        <div>
+
+            <small>Pendências Abertas</small>
+
+            <h2>{{ pendencias_abertas }}</h2>
+
+        </div>
+
+    </a>
+
+
+    <a href="/pendencias?status=Em%20andamento"
+       class="dashboard-card card-link">
+
+        <div class="icone laranja">
+
+            <i class="fa-solid fa-spinner"></i>
+
+        </div>
+
+        <div>
+
+            <small>Em Andamento</small>
+
+            <h2>{{ pendencias_andamento }}</h2>
+
+        </div>
+
+    </a>
+
+
+    <a href="/pendencias?status=Resolvida"
+       class="dashboard-card card-link">
+
+        <div class="icone verde">
+
+            <i class="fa-solid fa-circle-check"></i>
+
+        </div>
+
+        <div>
+
+            <small>Resolvidas</small>
+
+            <h2>{{ pendencias_resolvidas }}</h2>
+
+        </div>
+
+    </a>
+
+
+    <a href="/pendencias?prioridade=Urgente"
+       class="dashboard-card card-link">
+
+        <div class="icone vermelho">
+
+            <i class="fa-solid fa-triangle-exclamation"></i>
+
+        </div>
+
+        <div>
+
+            <small>Pendências Urgentes</small>
+
+            <h2>{{ pendencias_urgentes }}</h2>
+
+        </div>
+
+    </a>
+
+
+    <a href="/pendencias?atrasada=1"
+       class="dashboard-card card-link">
+
+        <div class="icone vermelho">
+
+            <i class="fa-solid fa-clock"></i>
+
+        </div>
+
+        <div>
+
+            <small>Pendências Atrasadas</small>
+
+            <h2>{{ pendencias_atrasadas }}</h2>
+
+        </div>
+
+    </a>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone verde">
+
+            <i class="fa-solid fa-chart-line"></i>
+
+        </div>
+
+        <div>
+
+            <small>Taxa de Resolução</small>
+
+            <h2>{{ taxa_resolucao }}%</h2>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="dashboard-graficos">
+
+    <div class="card">
+
+        <div class="cabecalho-card">
+
+            <div>
+
+                <h2>Pendências por Status</h2>
+
+                <small>
+                    Distribuição atual das pendências
+                </small>
+
+            </div>
+
+        </div>
+
+        <div class="grafico-container">
+
+            <canvas id="graficoStatus"></canvas>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="cabecalho-card">
+
+            <div>
+
+                <h2>Pendências por Prioridade</h2>
+
+                <small>
+                    Classificação conforme o nível de prioridade
+                </small>
+
+            </div>
+
+        </div>
+
+        <div class="grafico-container">
+
+            <canvas id="graficoPrioridade"></canvas>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Pendências por Setor</h2>
+
+            <small>
+                Setores com maior quantidade de registros
+            </small>
+
+        </div>
+
+    </div>
+
+    <div class="grafico-container grafico-horizontal">
+
+        <canvas id="graficoSetores"></canvas>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Pendências Prioritárias</h2>
+
+            <small>
+                Registros atrasados, urgentes ou recentemente cadastrados
+            </small>
+
+        </div>
+
+        <a href="/pendencias"
+           class="btn btn-secondary">
+
+            <i class="fa-solid fa-list-check"></i>
+
+            Ver Pendências
+
+        </a>
+
+    </div>
+
+
+    {% if ultimas_pendencias %}
+
+        <div class="tabela-responsiva">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Pendência</th>
+                        <th>Setor</th>
+                        <th>Prioridade</th>
+                        <th>Status</th>
+                        <th>Prazo</th>
+                        <th>Situação</th>
+                        <th>Ações</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for pendencia in ultimas_pendencias %}
+
+                        <tr class="{% if pendencia['atrasada'] %}linha-atrasada{% endif %}">
+
+                            <td>
+
+                                <strong>
+                                    #{{ pendencia["id"] }}
+                                </strong>
+
+                                <div class="texto-secundario">
+
+                                    {{ pendencia["descricao"] }}
+
+                                </div>
+
+                            </td>
+
+                            <td>
+                                {{ pendencia["setor"] }}
+                            </td>
+
+                            <td>
+
+                                <span class="badge prioridade-{{ pendencia['prioridade']|lower|replace('é', 'e')|replace('á', 'a') }}">
+
+                                    {{ pendencia["prioridade"] }}
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span class="badge status-{{ pendencia['status']|lower|replace(' ', '-') }}">
+
+                                    {{ pendencia["status"] }}
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                {% if pendencia["prazo"] %}
+
+                                    {{ pendencia["prazo"] }}
+
+                                {% else %}
+
+                                    <span class="texto-secundario">
+                                        Sem prazo
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if pendencia["atrasada"] %}
+
+                                    <span class="badge badge-atrasada">
+
+                                        <i class="fa-solid fa-clock"></i>
+
+                                        Atrasada
+
+                                    </span>
+
+                                {% elif pendencia["status"] == "Resolvida" %}
+
+                                    <span class="badge badge-resolvida">
+
+                                        <i class="fa-solid fa-circle-check"></i>
+
+                                        Concluída
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge badge-prazo">
+
+                                        <i class="fa-solid fa-hourglass-half"></i>
+
+                                        No prazo
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <a href="/ronda/{{ pendencia['ronda_id'] }}"
+                                   class="btn btn-outline btn-sm">
+
+                                    <i class="fa-solid fa-eye"></i>
+
+                                    Abrir
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="estado-vazio">
+
+            <i class="fa-solid fa-list-check"></i>
+
+            <h3>
+                Nenhuma pendência cadastrada
+            </h3>
+
+            <p>
+                As pendências registradas nas rondas aparecerão aqui.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Últimas Rondas</h2>
+
+            <small>
+                Registros mais recentes do sistema
+            </small>
+
+        </div>
+
+        <a href="/historico"
+           class="btn btn-secondary">
+
+            <i class="fa-solid fa-clock-rotate-left"></i>
+
+            Ver Histórico
+
+        </a>
+
+    </div>
+
+
+    {% if ultimas_rondas %}
+
+        <div class="tabela-responsiva">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Ronda</th>
+                        <th>Data</th>
+                        <th>Hora</th>
+                        <th>Setor</th>
+                        <th>Responsável</th>
+                        <th>Ações</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for ronda in ultimas_rondas %}
+
+                        <tr>
+
+                            <td>
+
+                                <strong>
+                                    #{{ ronda["id"] }}
+                                </strong>
+
+                            </td>
+
+                            <td>
+                                {{ ronda["data"] }}
+                            </td>
+
+                            <td>
+                                {{ ronda["hora"] }}
+                            </td>
+
+                            <td>
+                                {{ ronda["setor"] }}
+                            </td>
+
+                            <td>
+                                {{ ronda["responsavel"] }}
+                            </td>
+
+                            <td>
+
+                                <div class="acoes-tabela">
+
+                                    <a href="/ronda/{{ ronda['id'] }}"
+                                       class="btn btn-outline btn-sm">
+
+                                        <i class="fa-solid fa-eye"></i>
+
+                                        Abrir
+
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="estado-vazio">
+
+            <i class="fa-solid fa-clipboard"></i>
+
+            <h3>
+                Nenhuma ronda cadastrada
+            </h3>
+
+            <p>
+                Registre a primeira ronda gerencial do sistema.
+            </p>
+
+            <a href="/nova-ronda"
+               class="btn btn-primary">
+
+                <i class="fa-solid fa-plus"></i>
+
+                Nova Ronda
+
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+    const statusLabels = [
+        {% for item in pendencias_por_status %}
+            {{ item["status"] | tojson }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const statusValores = [
+        {% for item in pendencias_por_status %}
+            {{ item["total"] }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const prioridadeLabels = [
+        {% for item in pendencias_por_prioridade %}
+            {{ item["prioridade"] | tojson }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const prioridadeValores = [
+        {% for item in pendencias_por_prioridade %}
+            {{ item["total"] }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const setoresLabels = [
+        {% for item in pendencias_por_setor %}
+            {{ item["setor"] | tojson }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const setoresValores = [
+        {% for item in pendencias_por_setor %}
+            {{ item["total"] }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+
+    const graficoStatus = document.getElementById("graficoStatus");
+
+    if (graficoStatus) {
+
+        new Chart(graficoStatus, {
+
+            type: "doughnut",
+
+            data: {
+
+                labels: statusLabels,
+
+                datasets: [{
+
+                    data: statusValores,
+
+                    backgroundColor: [
+                        "#3b82f6",
+                        "#f59e0b",
+                        "#22c55e",
+                        "#94a3b8"
+                    ],
+
+                    borderWidth: 0
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                    legend: {
+
+                        position: "bottom"
+
+                    }
+
+                }
+
+            }
+
+        });
+
+    }
+
+
+    const graficoPrioridade = document.getElementById("graficoPrioridade");
+
+    if (graficoPrioridade) {
+
+        new Chart(graficoPrioridade, {
+
+            type: "bar",
+
+            data: {
+
+                labels: prioridadeLabels,
+
+                datasets: [{
+
+                    label: "Pendências",
+
+                    data: prioridadeValores,
+
+                    backgroundColor: [
+                        "#dc2626",
+                        "#f97316",
+                        "#eab308",
+                        "#22c55e",
+                        "#94a3b8"
+                    ],
+
+                    borderRadius: 8
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                scales: {
+
+                    y: {
+
+                        beginAtZero: true,
+
+                        ticks: {
+
+                            precision: 0
+
+                        }
+
+                    }
+
+                },
+
+                plugins: {
+
+                    legend: {
+
+                        display: false
+
+                    }
+
+                }
+
+            }
+
+        });
+
+    }
+
+
+    const graficoSetores = document.getElementById("graficoSetores");
+
+    if (graficoSetores) {
+
+        new Chart(graficoSetores, {
+
+            type: "bar",
+
+            data: {
+
+                labels: setoresLabels,
+
+                datasets: [{
+
+                    label: "Pendências",
+
+                    data: setoresValores,
+
+                    backgroundColor: "#2563eb",
+
+                    borderRadius: 8
+
+                }]
+
+            },
+
+            options: {
+
+                indexAxis: "y",
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                scales: {
+
+                    x: {
+
+                        beginAtZero: true,
+
+                        ticks: {
+
+                            precision: 0
+
+                        }
+
+                    }
+
+                },
+
+                plugins: {
+
+                    legend: {
+
+                        display: false
+
+                    }
+
+                }
+
+            }
+
+        });
+
+    }
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<h1 class="titulo-pagina">
+    Editar ronda nº {{ ronda["id"] }}
+</h1>
+
+<p class="subtitulo">
+    Altere as informações da ronda gerencial.
+</p>
+
+<div class="card">
+
+    <form method="POST">
+
+        <div class="campo-formulario">
+            <label for="setor_id">Setor</label>
+
+            <select id="setor_id" name="setor_id" required>
+
+                <option value="">
+                    Selecione o setor
+                </option>
+
+                {% for setor in setores %}
+
+                    <option
+                        value="{{ setor['id'] }}"
+                        {% if setor["id"] == ronda["setor_id"] %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ setor["nome"] }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="linha-formulario">
+
+            <div class="campo-formulario">
+                <label for="data">Data</label>
+
+                <input
+                    type="date"
+                    id="data"
+                    name="data"
+                    value="{{ ronda['data'] }}"
+                    required
+                >
+            </div>
+
+            <div class="campo-formulario">
+                <label for="hora">Hora</label>
+
+                <input
+                    type="time"
+                    id="hora"
+                    name="hora"
+                    value="{{ ronda['hora'] }}"
+                    required
+                >
+            </div>
+
+        </div>
+
+        <div class="campo-formulario">
+            <label for="responsavel">Responsável</label>
+
+            <input
+                type="text"
+                id="responsavel"
+                name="responsavel"
+                value="{{ ronda['responsavel'] }}"
+                required
+            >
+        </div>
+
+        <div class="campo-formulario">
+            <label for="observacoes">Observações</label>
+
+            <textarea
+                id="observacoes"
+                name="observacoes"
+                rows="6"
+                required
+            >{{ ronda["observacoes"] }}</textarea>
+        </div>
+
+        <div class="botoes-acoes">
+
+            <button type="submit" class="botao-editar">
+                Salvar alterações
+            </button>
+
+            <a href="/ronda/{{ ronda['id'] }}" class="botao-voltar">
+                Cancelar
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

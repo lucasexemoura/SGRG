@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <meta name="theme-color"
+          content="#0f172a">
+
+    <title>
+        {% block titulo %}SGRG{% endblock %}
+    </title>
+
+    <link rel="icon"
+          href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+<body>
+
+<div class="overlay-sidebar"
+     id="overlaySidebar"></div>
+
+
+<div class="layout"
+     id="layout">
+
+    <aside class="sidebar"
+           id="sidebar">
+
+        <div class="logo">
+
+            <div class="logo-icon">
+
+                <i class="fa-solid fa-hospital"></i>
+
+            </div>
+
+            <div class="logo-texto">
+
+                <h2>SGRG</h2>
+
+                <span>Gestão de Rondas</span>
+
+            </div>
+
+            <button type="button"
+                    class="botao-fechar-menu"
+                    id="botaoFecharMenu"
+                    aria-label="Fechar menu">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <nav class="menu-sidebar">
+
+            <span class="menu-titulo">
+                Principal
+            </span>
+
+            <a href="{{ url_for('inicio') }}"
+               class="{% if request.endpoint == 'inicio' %}ativo{% endif %}">
+
+                <i class="fa-solid fa-chart-line"></i>
+
+                <span>Dashboard</span>
+
+            </a>
+
+
+            <a href="{{ url_for('nova_ronda') }}"
+               class="{% if request.endpoint == 'nova_ronda' %}ativo{% endif %}">
+
+                <i class="fa-solid fa-circle-plus"></i>
+
+                <span>Nova Ronda</span>
+
+            </a>
+
+
+            <a href="{{ url_for('historico') }}"
+               class="{% if request.endpoint in ['historico', 'detalhes_ronda', 'editar_ronda'] %}ativo{% endif %}">
+
+                <i class="fa-solid fa-clock-rotate-left"></i>
+
+                <span>Histórico</span>
+
+            </a>
+
+
+            <a href="{{ url_for('painel_pendencias') }}"
+                class="{% if request.endpoint in ['painel_pendencias', 'nova_pendencia', 'editar_pendencia'] %}ativo{% endif %}">
+
+                <i class="fa-solid fa-list-check"></i>
+
+                <span>Pendências</span>
+
+            </a>
+
+
+            {% if usuario_perfil == "Administrador" %}
+
+                <span class="menu-titulo">
+                    Administração
+                </span>
+
+                <a href="/usuarios"
+                   class="{% if request.path.startswith('/usuarios') %}ativo{% endif %}">
+
+                    <i class="fa-solid fa-users"></i>
+
+                    <span>Usuários</span>
+
+                </a>
+
+
+                <a href="/setores"
+                   class="{% if request.path.startswith('/setores') %}ativo{% endif %}">
+
+                    <i class="fa-solid fa-building"></i>
+
+                    <span>Setores</span>
+
+                </a>
+
+            {% endif %}
+
+        </nav>
+
+
+        <div class="sidebar-rodape">
+
+            <button type="button"
+                    class="botao-tema-sidebar"
+                    id="botaoTemaSidebar">
+
+                <i class="fa-solid fa-moon"
+                   id="iconeTemaSidebar"></i>
+
+                <span id="textoTemaSidebar">
+                    Modo escuro
+                </span>
+
+            </button>
+
+
+            <div class="sidebar-usuario">
+
+                <div class="sidebar-avatar">
+
+                    <i class="fa-solid fa-user-doctor"></i>
+
+                </div>
+
+                <div class="sidebar-dados">
+
+                    <strong>
+                        {{ usuario_nome or "Usuário" }}
+                    </strong>
+
+                    <span>
+                        {{ usuario_perfil or "Perfil" }}
+                    </span>
+
+                </div>
+
+                <a href="{{ url_for('logout') }}"
+                   class="botao-logout"
+                   title="Sair do sistema">
+
+                    <i class="fa-solid fa-right-from-bracket"></i>
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <main class="principal">
+
+        <header class="topbar">
+
+            <div class="topbar-esquerda">
+
+                <button type="button"
+                        class="botao-menu"
+                        id="botaoMenu"
+                        aria-label="Abrir menu">
+
+                    <i class="fa-solid fa-bars"></i>
+
+                </button>
+
+
+                <div class="titulo-sistema">
+
+                    <h1>
+                        Sistema de Gestão de Rondas Gerenciais
+                    </h1>
+
+                    <small>
+                        Hospital da Mulher e da Criança do Vale do Juruá
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="topbar-acoes">
+
+                <button type="button"
+                        class="botao-tema"
+                        id="botaoTema"
+                        title="Alterar tema"
+                        aria-label="Alterar tema">
+
+                    <i class="fa-solid fa-moon"
+                       id="iconeTema"></i>
+
+                </button>
+
+
+                <div class="usuario">
+
+                    <div class="usuario-avatar">
+
+                        <i class="fa-solid fa-user-doctor"></i>
+
+                    </div>
+
+                    <div class="usuario-informacoes">
+
+                        <strong>
+                            {{ usuario_nome or "Usuário" }}
+                        </strong>
+
+                        <small>
+                            {{ usuario_perfil or "Perfil" }}
+                        </small>
+
+                    </div>
+
+                    <a href="{{ url_for('logout') }}"
+                       class="topbar-logout"
+                       title="Sair do sistema">
+
+                        <i class="fa-solid fa-right-from-bracket"></i>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <section class="conteudo">
+
+            {% with mensagens = get_flashed_messages(with_categories=true) %}
+
+                {% if mensagens %}
+
+                    <div class="container-toasts"
+                         id="containerToasts">
+
+                        {% for categoria, mensagem in mensagens %}
+
+                            <div class="toast toast-{{ categoria }}">
+
+                                <div class="toast-icone">
+
+                                    {% if categoria == "success" %}
+
+                                        <i class="fa-solid fa-circle-check"></i>
+
+                                    {% elif categoria == "danger" or categoria == "error" %}
+
+                                        <i class="fa-solid fa-circle-xmark"></i>
+
+                                    {% elif categoria == "warning" %}
+
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+
+                                    {% else %}
+
+                                        <i class="fa-solid fa-circle-info"></i>
+
+                                    {% endif %}
+
+                                </div>
+
+                                <div class="toast-conteudo">
+
+                                    <strong>
+
+                                        {% if categoria == "success" %}
+
+                                            Sucesso
+
+                                        {% elif categoria == "danger" or categoria == "error" %}
+
+                                            Erro
+
+                                        {% elif categoria == "warning" %}
+
+                                            Atenção
+
+                                        {% else %}
+
+                                            Informação
+
+                                        {% endif %}
+
+                                    </strong>
+
+                                    <span>
+                                        {{ mensagem }}
+                                    </span>
+
+                                </div>
+
+                                <button type="button"
+                                        class="toast-fechar"
+                                        aria-label="Fechar mensagem">
+
+                                    <i class="fa-solid fa-xmark"></i>
+
+                                </button>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+            {% endwith %}
+
+
+            {% block conteudo %}
+            {% endblock %}
+
+        </section>
+
+
+        <footer class="rodape-sistema">
+
+            <span>
+                © 2026 SGRG
+            </span>
+
+            <span>
+                Sistema de Gestão de Rondas Gerenciais
+            </span>
+
+        </footer>
+
+    </main>
+
+</div>
+
+
+<div class="loading-global"
+     id="loadingGlobal">
+
+    <div class="loading-conteudo">
+
+        <div class="loading-spinner"></div>
+
+        <span>Processando...</span>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const body = document.body;
+        const sidebar = document.getElementById("sidebar");
+        const overlaySidebar = document.getElementById("overlaySidebar");
+        const botaoMenu = document.getElementById("botaoMenu");
+        const botaoFecharMenu = document.getElementById("botaoFecharMenu");
+
+        const botaoTema = document.getElementById("botaoTema");
+        const botaoTemaSidebar = document.getElementById("botaoTemaSidebar");
+        const iconeTema = document.getElementById("iconeTema");
+        const iconeTemaSidebar = document.getElementById("iconeTemaSidebar");
+        const textoTemaSidebar = document.getElementById("textoTemaSidebar");
+
+        const loadingGlobal = document.getElementById("loadingGlobal");
+
+
+        function abrirMenu() {
+
+            sidebar.classList.add("aberta");
+            overlaySidebar.classList.add("ativo");
+            body.classList.add("menu-aberto");
+
+        }
+
+
+        function fecharMenu() {
+
+            sidebar.classList.remove("aberta");
+            overlaySidebar.classList.remove("ativo");
+            body.classList.remove("menu-aberto");
+
+        }
+
+
+        if (botaoMenu) {
+
+            botaoMenu.addEventListener("click", abrirMenu);
+
+        }
+
+
+        if (botaoFecharMenu) {
+
+            botaoFecharMenu.addEventListener("click", fecharMenu);
+
+        }
+
+
+        if (overlaySidebar) {
+
+            overlaySidebar.addEventListener("click", fecharMenu);
+
+        }
+
+
+        document.querySelectorAll(".menu-sidebar a").forEach(function (link) {
+
+            link.addEventListener("click", function () {
+
+                if (window.innerWidth <= 900) {
+
+                    fecharMenu();
+
+                }
+
+            });
+
+        });
+
+
+        function atualizarIconesTema() {
+
+            const escuro = body.classList.contains("tema-escuro");
+
+            if (iconeTema) {
+
+                iconeTema.className = escuro
+                    ? "fa-solid fa-sun"
+                    : "fa-solid fa-moon";
+
+            }
+
+            if (iconeTemaSidebar) {
+
+                iconeTemaSidebar.className = escuro
+                    ? "fa-solid fa-sun"
+                    : "fa-solid fa-moon";
+
+            }
+
+            if (textoTemaSidebar) {
+
+                textoTemaSidebar.textContent = escuro
+                    ? "Modo claro"
+                    : "Modo escuro";
+
+            }
+
+        }
+
+
+        function alternarTema() {
+
+            body.classList.toggle("tema-escuro");
+
+            const tema = body.classList.contains("tema-escuro")
+                ? "escuro"
+                : "claro";
+
+            localStorage.setItem("temaSGRG", tema);
+
+            atualizarIconesTema();
+
+        }
+
+
+        const temaSalvo = localStorage.getItem("temaSGRG");
+
+        if (temaSalvo === "escuro") {
+
+            body.classList.add("tema-escuro");
+
+        }
+
+        atualizarIconesTema();
+
+
+        if (botaoTema) {
+
+            botaoTema.addEventListener("click", alternarTema);
+
+        }
+
+
+        if (botaoTemaSidebar) {
+
+            botaoTemaSidebar.addEventListener("click", alternarTema);
+
+        }
+
+
+        document.querySelectorAll(".toast").forEach(function (toast) {
+
+            const botaoFechar = toast.querySelector(".toast-fechar");
+
+            if (botaoFechar) {
+
+                botaoFechar.addEventListener("click", function () {
+
+                    toast.classList.add("toast-saindo");
+
+                    setTimeout(function () {
+
+                        toast.remove();
+
+                    }, 300);
+
+                });
+
+            }
+
+            setTimeout(function () {
+
+                if (toast.isConnected) {
+
+                    toast.classList.add("toast-saindo");
+
+                    setTimeout(function () {
+
+                        toast.remove();
+
+                    }, 300);
+
+                }
+
+            }, 5000);
+
+        });
+
+
+        document.querySelectorAll("form").forEach(function (formulario) {
+
+            formulario.addEventListener("submit", function () {
+
+                const formularioValido = formulario.checkValidity();
+
+                if (formularioValido && loadingGlobal) {
+
+                    loadingGlobal.classList.add("ativo");
+
+                }
+
+            });
+
+        });
+
+
+        document.querySelectorAll("a.btn").forEach(function (botao) {
+
+            botao.addEventListener("click", function () {
+
+                const href = botao.getAttribute("href");
+                const possuiConfirmacao = botao.hasAttribute("onclick");
+                const abreNovaAba = botao.getAttribute("target") === "_blank";
+
+                if (
+                    href &&
+                    href !== "#" &&
+                    !possuiConfirmacao &&
+                    !abreNovaAba &&
+                    loadingGlobal
+                ) {
+
+                    loadingGlobal.classList.add("ativo");
+
+                }
+
+            });
+
+        });
+
+
+        window.addEventListener("pageshow", function () {
+
+            if (loadingGlobal) {
+
+                loadingGlobal.classList.remove("ativo");
+
+            }
+
+        });
+
+
+        window.addEventListener("resize", function () {
+
+            if (window.innerWidth > 900) {
+
+                fecharMenu();
+
+            }
+
+        });
+
+    });
+
+</script>
+
+
+{% block scripts %}
+{% endblock %}
+
+</body>
+
+</html>

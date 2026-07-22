@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Alterar Senha
+        </h1>
+
+        <p class="subtitulo">
+            Defina uma nova senha para o usuário.
+        </p>
+
+    </div>
+
+    <a href="{{ url_for('listar_usuarios') }}"
+       class="btn btn-secondary">
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Voltar
+
+    </a>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>{{ usuario["nome"] }}</h2>
+
+            <small>
+                {{ usuario["email"] }}
+            </small>
+
+        </div>
+
+    </div>
+
+    <form method="POST"
+          action="{{ url_for('alterar_senha_usuario', id=usuario['id']) }}">
+
+        <div class="grid-form">
+
+            <div class="grupo-formulario">
+
+                <label for="nova_senha">
+                    Nova senha
+                </label>
+
+                <input
+                    id="nova_senha"
+                    type="password"
+                    name="nova_senha"
+                    placeholder="Digite a nova senha"
+                    minlength="6"
+                    autocomplete="new-password"
+                    required>
+
+                <small>
+                    A senha deve possuir pelo menos 6 caracteres.
+                </small>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="confirmar_senha">
+                    Confirmar nova senha
+                </label>
+
+                <input
+                    id="confirmar_senha"
+                    type="password"
+                    name="confirmar_senha"
+                    placeholder="Digite novamente a senha"
+                    minlength="6"
+                    autocomplete="new-password"
+                    required>
+
+            </div>
+
+        </div>
+
+
+        <div class="acoes-form">
+
+            <a href="{{ url_for('listar_usuarios') }}"
+               class="btn btn-secondary">
+
+                Cancelar
+
+            </a>
+
+            <button
+                type="submit"
+                class="btn btn-primary">
+
+                <i class="fa-solid fa-key"></i>
+
+                Alterar Senha
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

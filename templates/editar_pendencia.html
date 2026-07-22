@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Editar Pendência
+        </h1>
+
+        <p class="subtitulo">
+            Atualize as informações da pendência e acompanhe sua resolução.
+        </p>
+
+    </div>
+
+    <a href="{{ url_for('detalhes_ronda', id=pendencia['ronda_id']) }}"
+       class="btn btn-secondary">
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Voltar
+
+    </a>
+
+</div>
+
+
+<div class="card">
+
+    <form method="POST"
+          enctype="multipart/form-data">
+
+        <div class="grupo-formulario">
+
+            <label for="descricao">
+                Descrição
+            </label>
+
+            <textarea
+                id="descricao"
+                name="descricao"
+                rows="4"
+                required>{{ pendencia["descricao"] }}</textarea>
+
+        </div>
+
+
+        <div class="grid-form">
+
+            <div class="grupo-formulario">
+
+                <label for="categoria">
+                    Categoria
+                </label>
+
+                <select
+                    id="categoria"
+                    name="categoria">
+
+                    <option value="Estrutura"
+                        {% if pendencia["categoria"]=="Estrutura" %}selected{% endif %}>
+                        Estrutura
+                    </option>
+
+                    <option value="Equipamentos"
+                        {% if pendencia["categoria"]=="Equipamentos" %}selected{% endif %}>
+                        Equipamentos
+                    </option>
+
+                    <option value="Medicamentos"
+                        {% if pendencia["categoria"]=="Medicamentos" %}selected{% endif %}>
+                        Medicamentos
+                    </option>
+
+                    <option value="Processo"
+                        {% if pendencia["categoria"]=="Processo" %}selected{% endif %}>
+                        Processo
+                    </option>
+
+                    <option value="Segurança"
+                        {% if pendencia["categoria"]=="Segurança" %}selected{% endif %}>
+                        Segurança
+                    </option>
+
+                    <option value="Outro"
+                        {% if pendencia["categoria"]=="Outro" %}selected{% endif %}>
+                        Outro
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="prioridade">
+                    Prioridade
+                </label>
+
+                <select
+                    id="prioridade"
+                    name="prioridade">
+
+                    <option value="Baixa"
+                        {% if pendencia["prioridade"]=="Baixa" %}selected{% endif %}>
+                        Baixa
+                    </option>
+
+                    <option value="Média"
+                        {% if pendencia["prioridade"]=="Média" %}selected{% endif %}>
+                        Média
+                    </option>
+
+                    <option value="Alta"
+                        {% if pendencia["prioridade"]=="Alta" %}selected{% endif %}>
+                        Alta
+                    </option>
+
+                    <option value="Urgente"
+                        {% if pendencia["prioridade"]=="Urgente" %}selected{% endif %}>
+                        Urgente
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="status">
+                    Status
+                </label>
+
+                <select
+                    id="status"
+                    name="status">
+
+                    <option value="Aberta"
+                        {% if pendencia["status"]=="Aberta" %}selected{% endif %}>
+                        Aberta
+                    </option>
+
+                    <option value="Em andamento"
+                        {% if pendencia["status"]=="Em andamento" %}selected{% endif %}>
+                        Em andamento
+                    </option>
+
+                    <option value="Resolvida"
+                        {% if pendencia["status"]=="Resolvida" %}selected{% endif %}>
+                        Resolvida
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="responsavel">
+                    Responsável
+                </label>
+
+                <input
+                    id="responsavel"
+                    type="text"
+                    name="responsavel"
+                    value="{{ pendencia['responsavel'] or '' }}">
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="prazo">
+                    Prazo
+                </label>
+
+                <input
+                    id="prazo"
+                    type="date"
+                    name="prazo"
+                    value="{{ pendencia['prazo'] or '' }}">
+
+            </div>
+
+        </div>
+
+
+        <div class="grupo-formulario">
+
+            <label for="observacao_resolucao">
+                Observação da resolução
+            </label>
+
+            <textarea
+                id="observacao_resolucao"
+                name="observacao_resolucao"
+                rows="3">{{ pendencia["observacao_resolucao"] or "" }}</textarea>
+
+        </div>
+
+
+        <hr>
+
+
+        <h3>Evidências fotográficas</h3>
+
+
+        <div class="grid-form">
+
+            <div class="grupo-formulario">
+
+                <label>
+                    Foto antes
+                </label>
+
+                {% if pendencia["foto_antes"] %}
+
+                    <div style="margin-bottom:10px;">
+
+                        <img
+                            src="{{ url_for('static', filename='uploads/' ~ pendencia['foto_antes']) }}"
+                            style="max-width:250px;border-radius:8px;">
+
+                    </div>
+
+                    <label>
+
+                        <input
+                            type="checkbox"
+                            name="remover_foto_antes"
+                            value="1">
+
+                        Remover foto
+
+                    </label>
+
+                    <br><br>
+
+                {% endif %}
+
+                <input
+                    type="file"
+                    name="foto_antes"
+                    accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label>
+                    Foto depois
+                </label>
+
+                {% if pendencia["foto_depois"] %}
+
+                    <div style="margin-bottom:10px;">
+
+                        <img
+                            src="{{ url_for('static', filename='uploads/' ~ pendencia['foto_depois']) }}"
+                            style="max-width:250px;border-radius:8px;">
+
+                    </div>
+
+                    <label>
+
+                        <input
+                            type="checkbox"
+                            name="remover_foto_depois"
+                            value="1">
+
+                        Remover foto
+
+                    </label>
+
+                    <br><br>
+
+                {% endif %}
+
+                <input
+                    type="file"
+                    name="foto_depois"
+                    accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+
+            </div>
+
+        </div>
+
+
+        <div class="acoes-form">
+
+            <a href="{{ url_for('detalhes_ronda', id=pendencia['ronda_id']) }}"
+               class="btn btn-secondary">
+
+                Cancelar
+
+            </a>
+
+            <button
+                class="btn btn-primary"
+                type="submit">
+
+                <i class="fa-solid fa-floppy-disk"></i>
+
+                Salvar Alterações
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

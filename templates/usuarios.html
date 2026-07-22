@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Usuários
+        </h1>
+
+        <p class="subtitulo">
+            Gerencie os usuários e os níveis de acesso ao sistema.
+        </p>
+
+    </div>
+
+    <a href="{{ url_for('novo_usuario') }}"
+       class="btn btn-primary">
+
+        <i class="fa-solid fa-user-plus"></i>
+
+        Novo Usuário
+
+    </a>
+
+</div>
+
+
+<div class="dashboard-cards">
+
+    <div class="dashboard-card">
+
+        <div class="icone azul">
+
+            <i class="fa-solid fa-users"></i>
+
+        </div>
+
+        <div>
+
+            <small>Total de usuários</small>
+
+            <h2>{{ usuarios|length }}</h2>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone verde">
+
+            <i class="fa-solid fa-user-check"></i>
+
+        </div>
+
+        <div>
+
+            <small>Usuários ativos</small>
+
+            <h2>
+                {{ usuarios|selectattr("ativo", "equalto", 1)|list|length }}
+            </h2>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Usuários cadastrados</h2>
+
+            <small>
+                Consulte, edite e controle o acesso dos usuários.
+            </small>
+
+        </div>
+
+    </div>
+
+    {% if usuarios %}
+
+        <div class="tabela-responsiva">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Perfil</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for usuario in usuarios %}
+
+                        <tr>
+
+                            <td>
+
+                                <strong>
+                                    {{ usuario["nome"] }}
+                                </strong>
+
+                            </td>
+
+                            <td>
+                                {{ usuario["email"] }}
+                            </td>
+
+                            <td>
+
+                                {% if usuario["perfil"] == "Administrador" %}
+
+                                    <span class="badge vermelho">
+                                        Administrador
+                                    </span>
+
+                                {% elif usuario["perfil"] == "Gerente" %}
+
+                                    <span class="badge azul">
+                                        Gerente
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge verde">
+                                        Enfermeiro
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if usuario["ativo"] == 1 %}
+
+                                    <span class="badge verde">
+                                        Ativo
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge cinza">
+                                        Inativo
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <div class="acoes-tabela">
+
+                                    <a href="{{ url_for('editar_usuario', id=usuario['id']) }}"
+                                       class="btn btn-warning btn-sm"
+                                       title="Editar usuário">
+
+                                        <i class="fa-solid fa-pen"></i>
+
+                                    </a>
+
+                                    <a href="{{ url_for('alterar_senha_usuario', id=usuario['id']) }}"
+                                       class="btn btn-secondary btn-sm"
+                                       title="Alterar senha">
+
+                                        <i class="fa-solid fa-key"></i>
+
+                                    </a>
+
+                                    {% if usuario["id"] != session.get("usuario_id") %}
+
+                                        <a href="{{ url_for('alterar_status_usuario', id=usuario['id']) }}"
+                                           class="btn btn-outline btn-sm"
+                                           title="{% if usuario['ativo'] == 1 %}Desativar usuário{% else %}Ativar usuário{% endif %}"
+                                           onclick="return confirm('{% if usuario['ativo'] == 1 %}Deseja desativar este usuário?{% else %}Deseja ativar este usuário?{% endif %}')">
+
+                                            {% if usuario["ativo"] == 1 %}
+
+                                                <i class="fa-solid fa-user-slash"></i>
+
+                                            {% else %}
+
+                                                <i class="fa-solid fa-user-check"></i>
+
+                                            {% endif %}
+
+                                        </a>
+
+                                        <a href="{{ url_for('excluir_usuario', id=usuario['id']) }}"
+                                           class="btn btn-danger btn-sm"
+                                           title="Excluir usuário"
+                                           onclick="return confirm('Deseja excluir este usuário permanentemente?')">
+
+                                            <i class="fa-solid fa-trash"></i>
+
+                                        </a>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="estado-vazio">
+
+            <i class="fa-solid fa-users"></i>
+
+            <h3>
+                Nenhum usuário cadastrado
+            </h3>
+
+            <p>
+                Cadastre o primeiro usuário para começar.
+            </p>
+
+            <a href="{{ url_for('novo_usuario') }}"
+               class="btn btn-primary">
+
+                <i class="fa-solid fa-user-plus"></i>
+
+                Novo Usuário
+
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

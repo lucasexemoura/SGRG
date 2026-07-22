@@ -1,0 +1,27 @@
+# Banco de dados e backups
+sgrg.db
+sgrg_backup.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Fotos enviadas pelo sistema
+static/uploads/
+uploads/
+
+# Senhas e variáveis de ambiente
+.env
+.env.*
+
+# Ambiente virtual
+venv/
+.venv/
+
+# Arquivos temporários do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos do VS Code
+.vscode/

@@ -1,0 +1,560 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Painel de Pendências
+        </h1>
+
+        <p class="subtitulo">
+            Gerencie todas as pendências registradas nas rondas gerenciais.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="dashboard-cards">
+
+    <div class="dashboard-card">
+
+        <div class="icone roxo">
+
+            <i class="fa-solid fa-list-check"></i>
+
+        </div>
+
+        <div>
+
+            <small>Resultados encontrados</small>
+
+            <h2>{{ total_filtrado }}</h2>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Filtros</h2>
+
+            <small>
+                Localize pendências por diferentes critérios.
+            </small>
+
+        </div>
+
+    </div>
+
+
+    <form method="GET"
+          action="/pendencias">
+
+        <div class="grid-form">
+
+            <div class="grupo-formulario">
+
+                <label for="busca">
+                    Pesquisa
+                </label>
+
+                <input type="text"
+                       id="busca"
+                       name="busca"
+                       value="{{ busca }}"
+                       placeholder="Descrição, categoria, responsável ou setor">
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="status">
+                    Status
+                </label>
+
+                <select id="status"
+                        name="status">
+
+                    <option value="">
+                        Todos
+                    </option>
+
+                    <option value="Aberta"
+                            {% if status_selecionado == "Aberta" %}selected{% endif %}>
+                        Aberta
+                    </option>
+
+                    <option value="Em andamento"
+                            {% if status_selecionado == "Em andamento" %}selected{% endif %}>
+                        Em andamento
+                    </option>
+
+                    <option value="Resolvida"
+                            {% if status_selecionado == "Resolvida" %}selected{% endif %}>
+                        Resolvida
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="prioridade">
+                    Prioridade
+                </label>
+
+                <select id="prioridade"
+                        name="prioridade">
+
+                    <option value="">
+                        Todas
+                    </option>
+
+                    <option value="Baixa"
+                            {% if prioridade_selecionada == "Baixa" %}selected{% endif %}>
+                        Baixa
+                    </option>
+
+                    <option value="Média"
+                            {% if prioridade_selecionada == "Média" %}selected{% endif %}>
+                        Média
+                    </option>
+
+                    <option value="Alta"
+                            {% if prioridade_selecionada == "Alta" %}selected{% endif %}>
+                        Alta
+                    </option>
+
+                    <option value="Urgente"
+                            {% if prioridade_selecionada == "Urgente" %}selected{% endif %}>
+                        Urgente
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="setor_id">
+                    Setor
+                </label>
+
+                <select id="setor_id"
+                        name="setor_id">
+
+                    <option value="">
+                        Todos
+                    </option>
+
+                    {% for setor in setores %}
+
+                        <option value="{{ setor['id'] }}"
+                                {% if setor_selecionado|string == setor['id']|string %}selected{% endif %}>
+
+                            {{ setor["nome"] }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="responsavel">
+                    Responsável
+                </label>
+
+                <select id="responsavel"
+                        name="responsavel">
+
+                    <option value="">
+                        Todos
+                    </option>
+
+                    {% for item in responsaveis %}
+
+                        <option value="{{ item['responsavel'] }}"
+                                {% if responsavel_selecionado == item['responsavel'] %}selected{% endif %}>
+
+                            {{ item["responsavel"] }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="prazo_inicio">
+                    Prazo inicial
+                </label>
+
+                <input type="date"
+                       id="prazo_inicio"
+                       name="prazo_inicio"
+                       value="{{ prazo_inicio }}">
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="prazo_fim">
+                    Prazo final
+                </label>
+
+                <input type="date"
+                       id="prazo_fim"
+                       name="prazo_fim"
+                       value="{{ prazo_fim }}">
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label>
+                    Situação
+                </label>
+
+                <label class="checkbox-filtro">
+
+                    <input type="checkbox"
+                           name="atrasada"
+                           value="1"
+                           {% if atrasada_selecionada == "1" %}checked{% endif %}>
+
+                    Mostrar somente pendências atrasadas
+
+                </label>
+
+            </div>
+
+        </div>
+
+
+        <div class="acoes-form">
+
+            <a href="/pendencias"
+               class="btn btn-secondary">
+
+                <i class="fa-solid fa-eraser"></i>
+
+                Limpar filtros
+
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+
+                <i class="fa-solid fa-filter"></i>
+
+                Filtrar
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Lista de Pendências</h2>
+
+            <small>
+
+                {% if total_filtrado == 1 %}
+
+                    1 pendência encontrada.
+
+                {% else %}
+
+                    {{ total_filtrado }} pendências encontradas.
+
+                {% endif %}
+
+            </small>
+
+        </div>
+
+    </div>
+
+
+    {% if pendencias %}
+
+        <div class="tabela-responsiva">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Ronda</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Setor</th>
+                        <th>Prioridade</th>
+                        <th>Status</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Situação</th>
+                        <th>Ações</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for pendencia in pendencias %}
+
+                        <tr class="{% if pendencia['atrasada'] %}linha-atrasada{% endif %}">
+
+                            <td>
+
+                                <strong>
+                                    #{{ pendencia["ronda_id"] }}
+                                </strong>
+
+                            </td>
+
+                            <td>
+
+                                {{ pendencia["descricao"] }}
+
+                            </td>
+
+                            <td>
+
+                                {{ pendencia["categoria"] or "-" }}
+
+                            </td>
+
+                            <td>
+
+                                {{ pendencia["setor"] }}
+
+                            </td>
+
+                            <td>
+
+                                {% if pendencia["prioridade"] == "Baixa" %}
+
+                                    <span class="badge verde">
+                                        Baixa
+                                    </span>
+
+                                {% elif pendencia["prioridade"] == "Média" %}
+
+                                    <span class="badge amarelo">
+                                        Média
+                                    </span>
+
+                                {% elif pendencia["prioridade"] == "Alta" %}
+
+                                    <span class="badge laranja">
+                                        Alta
+                                    </span>
+
+                                {% elif pendencia["prioridade"] == "Urgente" %}
+
+                                    <span class="badge vermelho">
+                                        Urgente
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge cinza">
+                                        -
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if pendencia["status"] == "Aberta" %}
+
+                                    <span class="badge azul">
+                                        Aberta
+                                    </span>
+
+                                {% elif pendencia["status"] == "Em andamento" %}
+
+                                    <span class="badge amarelo">
+                                        Em andamento
+                                    </span>
+
+                                {% elif pendencia["status"] == "Resolvida" %}
+
+                                    <span class="badge verde">
+                                        Resolvida
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge cinza">
+
+                                        {{ pendencia["status"] }}
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {{ pendencia["responsavel"] or "-" }}
+
+                            </td>
+
+                            <td>
+
+                                {{ pendencia["prazo"] or "-" }}
+
+                            </td>
+
+                            <td>
+
+                                {% if pendencia["atrasada"] %}
+
+                                    <span class="badge badge-atrasada">
+
+                                        <i class="fa-solid fa-clock"></i>
+
+                                        Atrasada
+
+                                    </span>
+
+                                {% elif pendencia["status"] == "Resolvida" %}
+
+                                    <span class="badge badge-resolvida">
+
+                                        <i class="fa-solid fa-circle-check"></i>
+
+                                        Concluída
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge badge-prazo">
+
+                                        <i class="fa-solid fa-hourglass-half"></i>
+
+                                        No prazo
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <div class="acoes-tabela">
+
+                                    <a href="/ronda/{{ pendencia['ronda_id'] }}"
+                                       class="btn btn-outline btn-sm"
+                                       title="Abrir ronda">
+
+                                        <i class="fa-solid fa-eye"></i>
+
+                                    </a>
+
+                                    <a href="/editar-pendencia/{{ pendencia['id'] }}"
+                                       class="btn btn-warning btn-sm"
+                                       title="Editar pendência">
+
+                                        <i class="fa-solid fa-pen"></i>
+
+                                    </a>
+
+                                    <a href="/excluir-pendencia/{{ pendencia['id'] }}"
+                                       class="btn btn-danger btn-sm"
+                                       title="Excluir pendência"
+                                       onclick="return confirm('Deseja excluir esta pendência?')">
+
+                                        <i class="fa-solid fa-trash"></i>
+
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="estado-vazio">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <h3>
+                Nenhuma pendência encontrada
+            </h3>
+
+            <p>
+                Altere ou limpe os filtros para visualizar outros registros.
+            </p>
+
+            <a href="/pendencias"
+               class="btn btn-primary">
+
+                <i class="fa-solid fa-eraser"></i>
+
+                Limpar filtros
+
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
