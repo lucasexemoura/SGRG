@@ -55,31 +55,9 @@ def adicionar_coluna(
 
 def cadastrar_setores_padrao(conexao):
 
-    # Remove todos os setores cadastrados
-    conexao.execute("""
-        DELETE FROM setores
-    """)
-
-    # Reinicia a numeração dos IDs (opcional)
-    conexao.execute("""
-        DELETE FROM sqlite_sequence
-        WHERE name = 'setores'
-    """)
-
+    
     # Cadastra somente os setores oficiais
-    for nome_setor in SETORES_PADRAO:
-
-        conexao.execute("""
-            INSERT INTO setores (
-                nome,
-                ativo
-            )
-            VALUES (?, ?)
-        """, (
-            nome_setor,
-            1
-        ))
-
+   
     for nome_setor in SETORES_PADRAO:
 
         setor_existente = conexao.execute("""
