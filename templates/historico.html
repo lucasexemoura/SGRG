@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Histórico de Rondas
+        </h1>
+
+        <p class="subtitulo">
+            Consulte todas as rondas registradas no sistema.
+        </p>
+
+    </div>
+
+    <a href="/nova-ronda"
+       class="btn btn-primary">
+
+        <i class="fa-solid fa-plus"></i>
+
+        Nova Ronda
+
+    </a>
+
+</div>
+
+
+<div class="dashboard-cards">
+
+    <div class="dashboard-card">
+
+        <div class="icone azul">
+
+            <i class="fa-solid fa-clipboard-list"></i>
+
+        </div>
+
+        <div>
+
+            <small>Total encontrado</small>
+
+            <h2>{{ rondas|length }}</h2>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone verde">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+        </div>
+
+        <div>
+
+            <small>Tipo de consulta</small>
+
+            <h3>
+                {% if pesquisa %}
+                    Pesquisa filtrada
+                {% else %}
+                    Histórico completo
+                {% endif %}
+            </h3>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Pesquisar rondas</h2>
+
+            <small>
+                Pesquise por setor, responsável ou data.
+            </small>
+
+        </div>
+
+    </div>
+
+    <form method="GET"
+          action="/historico">
+
+        <div class="grid-form">
+
+            <div class="grupo-formulario">
+
+                <label for="pesquisa">
+                    Pesquisa
+                </label>
+
+                <input
+                    id="pesquisa"
+                    type="text"
+                    name="pesquisa"
+                    placeholder="Setor, responsável ou data..."
+                    value="{{ pesquisa or '' }}">
+
+            </div>
+
+        </div>
+
+        <div class="acoes-form">
+
+            {% if pesquisa %}
+
+                <a href="/historico"
+                   class="btn btn-secondary">
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                    Limpar pesquisa
+
+                </a>
+
+            {% endif %}
+
+            <button
+                type="submit"
+                class="btn btn-primary">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                Pesquisar
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Rondas registradas</h2>
+
+            <small>
+                Resultados encontrados no histórico.
+            </small>
+
+        </div>
+
+    </div>
+
+    {% if rondas %}
+
+        <div class="tabela-responsiva">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Ronda</th>
+                        <th>Data</th>
+                        <th>Hora</th>
+                        <th>Setor</th>
+                        <th>Responsável</th>
+                        <th>Ações</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for ronda in rondas %}
+
+                        <tr>
+
+                            <td>
+
+                                <strong>
+                                    #{{ ronda["id"] }}
+                                </strong>
+
+                            </td>
+
+                            <td>
+                                {{ ronda["data"] }}
+                            </td>
+
+                            <td>
+                                {{ ronda["hora"] }}
+                            </td>
+
+                            <td>
+                                {{ ronda["setor"] }}
+                            </td>
+
+                            <td>
+                                {{ ronda["responsavel"] }}
+                            </td>
+
+                            <td>
+
+                                <div class="acoes-tabela">
+
+                                    <a href="/ronda/{{ ronda['id'] }}"
+                                       class="btn btn-outline btn-sm">
+
+                                        <i class="fa-solid fa-eye"></i>
+
+                                        Abrir
+
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="estado-vazio">
+
+            <i class="fa-solid fa-folder-open"></i>
+
+            <h3>
+                Nenhuma ronda encontrada
+            </h3>
+
+            <p>
+
+                {% if pesquisa %}
+
+                    Nenhum registro corresponde à pesquisa realizada.
+
+                {% else %}
+
+                    Ainda não existem rondas registradas no sistema.
+
+                {% endif %}
+
+            </p>
+
+            {% if pesquisa %}
+
+                <a href="/historico"
+                   class="btn btn-secondary">
+
+                    <i class="fa-solid fa-rotate-left"></i>
+
+                    Limpar pesquisa
+
+                </a>
+
+            {% else %}
+
+                <a href="/nova-ronda"
+                   class="btn btn-primary">
+
+                    <i class="fa-solid fa-plus"></i>
+
+                    Nova Ronda
+
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

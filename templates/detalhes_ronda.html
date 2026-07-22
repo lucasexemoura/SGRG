@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Ronda #{{ ronda["id"] }}
+        </h1>
+
+        <p class="subtitulo">
+            Informações completas da ronda gerencial.
+        </p>
+
+    </div>
+
+    <div class="barra-acoes">
+
+        <a href="{{ url_for('historico') }}"
+           class="btn btn-secondary">
+
+            <i class="fa-solid fa-arrow-left"></i>
+
+            Voltar
+
+        </a>
+
+        <a href="{{ url_for('relatorio_ronda', id=ronda['id']) }}"
+            class="btn btn-success"
+            target="_blank">
+
+            <i class="fa-solid fa-file-pdf"></i>
+
+            Gerar PDF
+
+        </a>
+
+            <i class="fa-solid fa-pen"></i>
+
+            Editar
+
+        </a>
+
+        <a href="{{ url_for('excluir_ronda', id=ronda['id']) }}"
+           class="btn btn-danger"
+           onclick="return confirm('Deseja excluir esta ronda?')">
+
+            <i class="fa-solid fa-trash"></i>
+
+            Excluir
+
+        </a>
+
+    </div>
+
+</div>
+
+
+<div class="dashboard-cards">
+
+    <div class="dashboard-card">
+
+        <div class="icone azul">
+
+            <i class="fa-solid fa-hospital"></i>
+
+        </div>
+
+        <div>
+
+            <small>Setor</small>
+
+            <h3>{{ ronda["setor"] }}</h3>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone verde">
+
+            <i class="fa-solid fa-calendar"></i>
+
+        </div>
+
+        <div>
+
+            <small>Data</small>
+
+            <h3>{{ ronda["data"] }}</h3>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone laranja">
+
+            <i class="fa-solid fa-clock"></i>
+
+        </div>
+
+        <div>
+
+            <small>Hora</small>
+
+            <h3>{{ ronda["hora"] }}</h3>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone vermelho">
+
+            <i class="fa-solid fa-user-doctor"></i>
+
+        </div>
+
+        <div>
+
+            <small>Responsável</small>
+
+            <h3>{{ ronda["responsavel"] }}</h3>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Observações da Ronda</h2>
+
+            <small>
+                Registro realizado durante a inspeção.
+            </small>
+
+        </div>
+
+    </div>
+
+    {% if ronda["observacoes"] %}
+
+        <p>
+            {{ ronda["observacoes"] }}
+        </p>
+
+    {% else %}
+
+        <div class="estado-vazio">
+
+            <i class="fa-solid fa-note-sticky"></i>
+
+            <h3>
+                Nenhuma observação registrada
+            </h3>
+
+            <p>
+                Esta ronda não possui observações adicionais.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>
+
+                Pendências
+
+                <span class="badge azul">
+
+                    {{ pendencias|length }}
+
+                </span>
+
+            </h2>
+
+            <small>
+                Itens identificados durante a ronda.
+            </small>
+
+        </div>
+
+        <a href="{{ url_for('nova_pendencia', ronda_id=ronda['id']) }}"
+           class="btn btn-primary">
+
+            <i class="fa-solid fa-plus"></i>
+
+            Nova Pendência
+
+        </a>
+
+    </div>
+
+
+    {% if pendencias %}
+
+        <div class="lista-pendencias">
+
+            {% for pendencia in pendencias %}
+
+                <div class="card pendencia-card">
+
+                    <div class="cabecalho-card">
+
+                        <div>
+
+                            <h3>
+                                Pendência #{{ pendencia["id"] }}
+                            </h3>
+
+                            <small>
+                                {{ pendencia["categoria"] or "Sem categoria" }}
+                            </small>
+
+                        </div>
+
+                        <div class="barra-acoes">
+
+                            <a href="{{ url_for('editar_pendencia', id=pendencia['id']) }}"
+                               class="btn btn-warning btn-sm">
+
+                                <i class="fa-solid fa-pen"></i>
+
+                                Editar
+
+                            </a>
+
+                            <a href="{{ url_for('excluir_pendencia', id=pendencia['id']) }}"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Deseja excluir esta pendência?')">
+
+                                <i class="fa-solid fa-trash"></i>
+
+                                Excluir
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="grid-form">
+
+                        <div>
+
+                            <small>Descrição</small>
+
+                            <p>
+                                {{ pendencia["descricao"] }}
+                            </p>
+
+                        </div>
+
+
+                        <div>
+
+                            <small>Responsável</small>
+
+                            <p>
+                                {{ pendencia["responsavel"] or "Não informado" }}
+                            </p>
+
+                        </div>
+
+
+                        <div>
+
+                            <small>Prioridade</small>
+
+                            <p>
+
+                                {% if pendencia["prioridade"] == "Baixa" %}
+
+                                    <span class="badge verde">
+                                        Baixa
+                                    </span>
+
+                                {% elif pendencia["prioridade"] == "Média" %}
+
+                                    <span class="badge amarelo">
+                                        Média
+                                    </span>
+
+                                {% elif pendencia["prioridade"] == "Alta" %}
+
+                                    <span class="badge laranja">
+                                        Alta
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge vermelho">
+                                        Urgente
+                                    </span>
+
+                                {% endif %}
+
+                            </p>
+
+                        </div>
+
+
+                        <div>
+
+                            <small>Status</small>
+
+                            <p>
+
+                                {% if pendencia["status"] == "Aberta" %}
+
+                                    <span class="badge azul">
+                                        Aberta
+                                    </span>
+
+                                {% elif pendencia["status"] == "Em andamento" %}
+
+                                    <span class="badge amarelo">
+                                        Em andamento
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge verde">
+                                        Resolvida
+                                    </span>
+
+                                {% endif %}
+
+                            </p>
+
+                        </div>
+
+
+                        <div>
+
+                            <small>Prazo</small>
+
+                            <p>
+                                {{ pendencia["prazo"] or "Não informado" }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    {% if pendencia["observacao_resolucao"] %}
+
+                        <div class="grupo-formulario">
+
+                            <small>Observação da resolução</small>
+
+                            <p>
+                                {{ pendencia["observacao_resolucao"] }}
+                            </p>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if pendencia["foto_antes"] or pendencia["foto_depois"] %}
+
+                        <div class="grid-form">
+
+                            <div class="grupo-formulario">
+
+                                <label>
+                                    Foto antes
+                                </label>
+
+                                {% if pendencia["foto_antes"] %}
+
+                                    <a href="{{ url_for('static', filename='uploads/' ~ pendencia['foto_antes']) }}"
+                                       target="_blank">
+
+                                        <img
+                                            src="{{ url_for('static', filename='uploads/' ~ pendencia['foto_antes']) }}"
+                                            alt="Foto antes da correção"
+                                            style="
+                                                width: 100%;
+                                                max-width: 420px;
+                                                height: 260px;
+                                                object-fit: cover;
+                                                border-radius: 10px;
+                                                border: 1px solid #d9dee7;
+                                            ">
+
+                                    </a>
+
+                                {% else %}
+
+                                    <div class="estado-vazio">
+
+                                        <i class="fa-solid fa-camera"></i>
+
+                                        <p>
+                                            Foto antes não registrada.
+                                        </p>
+
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            <div class="grupo-formulario">
+
+                                <label>
+                                    Foto depois
+                                </label>
+
+                                {% if pendencia["foto_depois"] %}
+
+                                    <a href="{{ url_for('static', filename='uploads/' ~ pendencia['foto_depois']) }}"
+                                       target="_blank">
+
+                                        <img
+                                            src="{{ url_for('static', filename='uploads/' ~ pendencia['foto_depois']) }}"
+                                            alt="Foto depois da correção"
+                                            style="
+                                                width: 100%;
+                                                max-width: 420px;
+                                                height: 260px;
+                                                object-fit: cover;
+                                                border-radius: 10px;
+                                                border: 1px solid #d9dee7;
+                                            ">
+
+                                    </a>
+
+                                {% else %}
+
+                                    <div class="estado-vazio">
+
+                                        <i class="fa-solid fa-camera"></i>
+
+                                        <p>
+                                            Foto depois não registrada.
+                                        </p>
+
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="estado-vazio">
+
+            <i class="fa-solid fa-list-check"></i>
+
+            <h3>
+                Nenhuma pendência cadastrada
+            </h3>
+
+            <p>
+                Esta ronda ainda não possui pendências registradas.
+            </p>
+
+            <a href="{{ url_for('nova_pendencia', ronda_id=ronda['id']) }}"
+               class="btn btn-primary">
+
+                <i class="fa-solid fa-plus"></i>
+
+                Registrar Pendência
+
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

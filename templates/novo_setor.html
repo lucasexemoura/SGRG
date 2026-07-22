@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Novo Setor
+        </h1>
+
+        <p class="subtitulo">
+            Cadastre um novo setor para utilização nas rondas gerenciais.
+        </p>
+
+    </div>
+
+    <a href="{{ url_for('listar_setores') }}"
+       class="btn btn-secondary">
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Voltar
+
+    </a>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Dados do setor</h2>
+
+            <small>
+                Informe o nome do setor e defina sua situação no sistema.
+            </small>
+
+        </div>
+
+    </div>
+
+    <form method="POST"
+          action="{{ url_for('novo_setor') }}">
+
+        <div class="grid-form">
+
+            <div class="grupo-formulario">
+
+                <label for="nome">
+                    Nome do setor
+                </label>
+
+                <input
+                    id="nome"
+                    type="text"
+                    name="nome"
+                    value="{{ nome or '' }}"
+                    placeholder="Digite o nome do setor"
+                    autocomplete="off"
+                    required>
+
+            </div>
+
+        </div>
+
+
+        <div class="grupo-formulario">
+
+            <label class="campo-checkbox">
+
+                <input
+                    type="checkbox"
+                    name="ativo"
+                    {% if ativo is not defined or ativo == 1 %}checked{% endif %}>
+
+                <span>
+                    Setor ativo
+                </span>
+
+            </label>
+
+            <small>
+                Apenas setores ativos aparecerão no cadastro de novas rondas.
+            </small>
+
+        </div>
+
+
+        <div class="acoes-form">
+
+            <a href="{{ url_for('listar_setores') }}"
+               class="btn btn-secondary">
+
+                Cancelar
+
+            </a>
+
+            <button
+                type="submit"
+                class="btn btn-primary">
+
+                <i class="fa-solid fa-floppy-disk"></i>
+
+                Cadastrar Setor
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

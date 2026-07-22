@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Nova Pendência
+        </h1>
+
+        <p class="subtitulo">
+            Registre uma pendência encontrada durante a ronda.
+        </p>
+
+    </div>
+
+    <a href="{{ url_for('detalhes_ronda', id=ronda_id) }}"
+       class="btn btn-secondary">
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Voltar
+
+    </a>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Dados da pendência</h2>
+
+            <small>
+                Preencha as informações e adicione evidências fotográficas.
+            </small>
+
+        </div>
+
+    </div>
+
+    <form method="POST"
+          enctype="multipart/form-data">
+
+        <div class="grupo-formulario">
+
+            <label for="descricao">
+                Descrição
+            </label>
+
+            <textarea
+                id="descricao"
+                name="descricao"
+                rows="4"
+                placeholder="Descreva detalhadamente a pendência encontrada"
+                required>{{ request.form.get("descricao", "") }}</textarea>
+
+        </div>
+
+
+        <div class="grid-form">
+
+            <div class="grupo-formulario">
+
+                <label for="categoria">
+                    Categoria
+                </label>
+
+                <select
+                    id="categoria"
+                    name="categoria"
+                    required>
+
+                    <option value="">
+                        Selecione uma categoria
+                    </option>
+
+                    <option value="Estrutura"
+                        {% if request.form.get("categoria") == "Estrutura" %}selected{% endif %}>
+                        Estrutura
+                    </option>
+
+                    <option value="Equipamentos"
+                        {% if request.form.get("categoria") == "Equipamentos" %}selected{% endif %}>
+                        Equipamentos
+                    </option>
+
+                    <option value="Medicamentos"
+                        {% if request.form.get("categoria") == "Medicamentos" %}selected{% endif %}>
+                        Medicamentos
+                    </option>
+
+                    <option value="Processo"
+                        {% if request.form.get("categoria") == "Processo" %}selected{% endif %}>
+                        Processo
+                    </option>
+
+                    <option value="Segurança"
+                        {% if request.form.get("categoria") == "Segurança" %}selected{% endif %}>
+                        Segurança
+                    </option>
+
+                    <option value="Outro"
+                        {% if request.form.get("categoria") == "Outro" %}selected{% endif %}>
+                        Outro
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="prioridade">
+                    Prioridade
+                </label>
+
+                <select
+                    id="prioridade"
+                    name="prioridade"
+                    required>
+
+                    <option value="Baixa"
+                        {% if request.form.get("prioridade", "Baixa") == "Baixa" %}selected{% endif %}>
+                        Baixa
+                    </option>
+
+                    <option value="Média"
+                        {% if request.form.get("prioridade") == "Média" %}selected{% endif %}>
+                        Média
+                    </option>
+
+                    <option value="Alta"
+                        {% if request.form.get("prioridade") == "Alta" %}selected{% endif %}>
+                        Alta
+                    </option>
+
+                    <option value="Urgente"
+                        {% if request.form.get("prioridade") == "Urgente" %}selected{% endif %}>
+                        Urgente
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="status">
+                    Status
+                </label>
+
+                <select
+                    id="status"
+                    name="status"
+                    required>
+
+                    <option value="Aberta"
+                        {% if request.form.get("status", "Aberta") == "Aberta" %}selected{% endif %}>
+                        Aberta
+                    </option>
+
+                    <option value="Em andamento"
+                        {% if request.form.get("status") == "Em andamento" %}selected{% endif %}>
+                        Em andamento
+                    </option>
+
+                    <option value="Resolvida"
+                        {% if request.form.get("status") == "Resolvida" %}selected{% endif %}>
+                        Resolvida
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="responsavel">
+                    Responsável pela correção
+                </label>
+
+                <input
+                    id="responsavel"
+                    type="text"
+                    name="responsavel"
+                    value="{{ request.form.get('responsavel', '') }}"
+                    placeholder="Nome ou setor responsável">
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="prazo">
+                    Prazo
+                </label>
+
+                <input
+                    id="prazo"
+                    type="date"
+                    name="prazo"
+                    value="{{ request.form.get('prazo', '') }}">
+
+            </div>
+
+        </div>
+
+
+        <div class="grupo-formulario">
+
+            <label for="observacao_resolucao">
+                Observação da resolução
+            </label>
+
+            <textarea
+                id="observacao_resolucao"
+                name="observacao_resolucao"
+                rows="3"
+                placeholder="Informe detalhes da resolução, quando aplicável">{{ request.form.get("observacao_resolucao", "") }}</textarea>
+
+        </div>
+
+
+        <div class="grid-form">
+
+            <div class="grupo-formulario">
+
+                <label for="foto_antes">
+                    Foto antes da correção
+                </label>
+
+                <input
+                    id="foto_antes"
+                    type="file"
+                    name="foto_antes"
+                    accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+
+                <small>
+                    Formatos permitidos: PNG, JPG, JPEG ou WEBP.
+                </small>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="foto_depois">
+                    Foto depois da correção
+                </label>
+
+                <input
+                    id="foto_depois"
+                    type="file"
+                    name="foto_depois"
+                    accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+
+                <small>
+                    Pode ser adicionada agora ou posteriormente na edição.
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <div class="acoes-form">
+
+            <a href="{{ url_for('detalhes_ronda', id=ronda_id) }}"
+               class="btn btn-secondary">
+
+                Cancelar
+
+            </a>
+
+            <button
+                class="btn btn-primary"
+                type="submit">
+
+                <i class="fa-solid fa-floppy-disk"></i>
+
+                Salvar Pendência
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

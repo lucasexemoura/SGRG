@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Nova Ronda Gerencial
+        </h1>
+
+        <p class="subtitulo">
+            Preencha os dados abaixo para registrar uma nova ronda.
+        </p>
+
+    </div>
+
+    <a href="/"
+       class="btn btn-secondary">
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Voltar
+
+    </a>
+
+</div>
+
+
+<div class="card">
+
+    <form method="POST">
+
+        <div class="grid-form">
+
+            <div class="grupo-formulario">
+
+                <label for="setor_id">
+                    Setor
+                </label>
+
+                <select
+                    id="setor_id"
+                    name="setor_id"
+                    required>
+
+                    <option value="">
+                        Selecione o setor
+                    </option>
+
+                    {% for setor in setores %}
+
+                        <option value="{{ setor['id'] }}">
+
+                            {{ setor['nome'] }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="responsavel">
+                    Responsável
+                </label>
+
+                <input
+                    id="responsavel"
+                    type="text"
+                    name="responsavel"
+                    value="{{ usuario_nome or '' }}"
+                    placeholder="Nome do responsável"
+                    required>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="data">
+                    Data
+                </label>
+
+                <input
+                    id="data"
+                    type="date"
+                    name="data"
+                    required>
+
+            </div>
+
+
+            <div class="grupo-formulario">
+
+                <label for="hora">
+                    Hora
+                </label>
+
+                <input
+                    id="hora"
+                    type="time"
+                    name="hora"
+                    required>
+
+            </div>
+
+        </div>
+
+
+        <div class="grupo-formulario">
+
+            <label for="observacoes">
+                Observações Gerais
+            </label>
+
+            <textarea
+                id="observacoes"
+                name="observacoes"
+                placeholder="Descreva o que foi observado durante a ronda..."></textarea>
+
+        </div>
+
+
+        <div class="acoes-form">
+
+            <a href="/"
+               class="btn btn-secondary">
+
+                <i class="fa-solid fa-xmark"></i>
+
+                Cancelar
+
+            </a>
+
+            <button
+                type="submit"
+                class="btn btn-primary">
+
+                <i class="fa-solid fa-floppy-disk"></i>
+
+                Salvar Ronda
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

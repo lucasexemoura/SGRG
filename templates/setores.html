@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+
+    <div>
+
+        <h1 class="titulo-pagina">
+            Setores
+        </h1>
+
+        <p class="subtitulo">
+            Gerencie os setores utilizados nas rondas gerenciais.
+        </p>
+
+    </div>
+
+    <a href="{{ url_for('novo_setor') }}"
+       class="btn btn-primary">
+
+        <i class="fa-solid fa-plus"></i>
+
+        Novo Setor
+
+    </a>
+
+</div>
+
+
+<div class="dashboard-cards">
+
+    <div class="dashboard-card">
+
+        <div class="icone azul">
+
+            <i class="fa-solid fa-building"></i>
+
+        </div>
+
+        <div>
+
+            <small>Total de setores</small>
+
+            <h2>{{ setores|length }}</h2>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-card">
+
+        <div class="icone verde">
+
+            <i class="fa-solid fa-check-circle"></i>
+
+        </div>
+
+        <div>
+
+            <small>Setores ativos</small>
+
+            <h2>
+                {{ setores|selectattr("ativo", "equalto", 1)|list|length }}
+            </h2>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="cabecalho-card">
+
+        <div>
+
+            <h2>Setores cadastrados</h2>
+
+            <small>
+                Os setores cadastrados aqui ficarão disponíveis para as rondas.
+            </small>
+
+        </div>
+
+    </div>
+
+    {% if setores %}
+
+        <div class="tabela-responsiva">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Nome do Setor</th>
+                        <th>Status</th>
+                        <th width="220">Ações</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for setor in setores %}
+
+                        <tr>
+
+                            <td>
+
+                                <strong>
+
+                                    {{ setor["nome"] }}
+
+                                </strong>
+
+                            </td>
+
+                            <td>
+
+                                {% if setor["ativo"] == 1 %}
+
+                                    <span class="badge verde">
+
+                                        Ativo
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge cinza">
+
+                                        Inativo
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <div class="acoes-tabela">
+
+                                    <a href="{{ url_for('editar_setor', id=setor['id']) }}"
+                                       class="btn btn-warning btn-sm"
+                                       title="Editar">
+
+                                        <i class="fa-solid fa-pen"></i>
+
+                                    </a>
+
+                                    <a href="{{ url_for('alterar_status_setor', id=setor['id']) }}"
+                                       class="btn btn-outline btn-sm"
+                                       title="{% if setor['ativo']==1 %}Desativar{% else %}Ativar{% endif %}"
+                                       onclick="return confirm('{% if setor['ativo']==1 %}Deseja desativar este setor?{% else %}Deseja ativar este setor?{% endif %}')">
+
+                                        {% if setor["ativo"] == 1 %}
+
+                                            <i class="fa-solid fa-eye-slash"></i>
+
+                                        {% else %}
+
+                                            <i class="fa-solid fa-eye"></i>
+
+                                        {% endif %}
+
+                                    </a>
+
+                                    <a href="{{ url_for('excluir_setor', id=setor['id']) }}"
+                                       class="btn btn-danger btn-sm"
+                                       title="Excluir"
+                                       onclick="return confirm('Deseja excluir este setor?')">
+
+                                        <i class="fa-solid fa-trash"></i>
+
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="estado-vazio">
+
+            <i class="fa-solid fa-building"></i>
+
+            <h3>
+                Nenhum setor cadastrado
+            </h3>
+
+            <p>
+
+                Cadastre os setores da instituição para que possam ser utilizados nas rondas.
+
+            </p>
+
+            <a href="{{ url_for('novo_setor') }}"
+               class="btn btn-primary">
+
+                <i class="fa-solid fa-plus"></i>
+
+                Cadastrar Setor
+
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
