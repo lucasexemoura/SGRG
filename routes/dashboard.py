@@ -19,13 +19,13 @@ def registrar_rotas(app):
             total_setores = conexao.execute("""
                 SELECT COUNT(*)
                 FROM setores
-                WHERE ativo = 1
+                WHERE ativo = TRUE
             """).fetchone()[0]
 
             rondas_hoje = conexao.execute("""
                 SELECT COUNT(*)
                 FROM rondas
-                WHERE data = DATE('now', 'localtime')
+                WHERE DATE(data) = CURRENT_DATE
             """).fetchone()[0]
 
             total_pendencias = conexao.execute("""
@@ -63,7 +63,7 @@ def registrar_rotas(app):
                 FROM pendencias
                 WHERE prazo IS NOT NULL
                   AND prazo != ''
-                  AND DATE(prazo) < DATE('now', 'localtime')
+                  AND DATE(prazo) < CURRENT_DATE
                   AND status != 'Resolvida'
             """).fetchone()[0]
 
@@ -121,7 +121,7 @@ def registrar_rotas(app):
                     ON rondas.setor_id = setores.id
                 LEFT JOIN pendencias
                     ON pendencias.ronda_id = rondas.id
-                WHERE setores.ativo = 1
+                WHERE setores.ativo = TRUE
                 GROUP BY
                     setores.id,
                     setores.nome
@@ -161,7 +161,7 @@ def registrar_rotas(app):
                         WHEN pendencias.prazo IS NOT NULL
                          AND pendencias.prazo != ''
                          AND DATE(pendencias.prazo)
-                             < DATE('now', 'localtime')
+                             < CURRENT_DATE
                          AND pendencias.status != 'Resolvida'
                         THEN 1
                         ELSE 0

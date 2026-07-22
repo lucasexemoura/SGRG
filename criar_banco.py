@@ -1,9 +1,6 @@
-import sqlite3
-
+from database.conexao import conectar
 from werkzeug.security import generate_password_hash
 
-
-BANCO = "sgrg.db"
 
 
 SETORES_PADRAO = [
@@ -19,48 +16,11 @@ SETORES_PADRAO = [
     "Clínica Ginecológica"
 ]
 
-
-def coluna_existe(conexao, tabela, coluna):
-
-    colunas = conexao.execute(
-        f"PRAGMA table_info({tabela})"
-    ).fetchall()
-
-    return any(
-        item[1] == coluna
-        for item in colunas
-    )
-
-
-def adicionar_coluna(
-    conexao,
-    tabela,
-    coluna,
-    definicao
-):
-
-    if not coluna_existe(
-        conexao,
-        tabela,
-        coluna
-    ):
-
-        conexao.execute(
-            f"""
-            ALTER TABLE {tabela}
-            ADD COLUMN {coluna} {definicao}
-            """
-        )
-
-
 def cadastrar_setores_padrao(conexao):
 
-    
-    # Cadastra somente os setores oficiais
-   
     for nome_setor in SETORES_PADRAO:
 
-        setor_existente = conexao.execute("""
+        setor = conexao.execute("""
             SELECT id
             FROM setores
             WHERE LOWER(TRIM(nome)) = LOWER(TRIM(?))
@@ -68,7 +28,7 @@ def cadastrar_setores_padrao(conexao):
             nome_setor,
         )).fetchone()
 
-        if setor_existente is None:
+        if setor is None:
 
             conexao.execute("""
                 INSERT INTO setores (
@@ -78,232 +38,168 @@ def cadastrar_setores_padrao(conexao):
                 VALUES (?, ?)
             """, (
                 nome_setor,
-                1
+                True
             ))
 
         else:
 
             conexao.execute("""
                 UPDATE setores
-                SET ativo = 1
+                SET ativo = TRUE
                 WHERE id = ?
             """, (
-                setor_existente[0],
+                setor["id"],
             ))
 
 
 def criar_banco():
 
-    conexao = sqlite3.connect(BANCO)
+    conexao = conectar()
 
     try:
 
-        conexao.execute(
-            "PRAGMA foreign_keys = ON"
+        # =========================
+        # SETORES
+        # =========================
+
+        conexao.execute("""
+        CREATE TABLE IF NOT EXISTS setores(
+            id SERIAL PRIMARY KEY,
+            nome VARCHAR(200) UNIQUE NOT NULL,
+            ativo BOOLEAN DEFAULT TRUE
         )
-
-        # ==================================================
-        # TABELA DE SETORES
-        # ==================================================
-
-        conexao.execute("""
-            CREATE TABLE IF NOT EXISTS setores (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL UNIQUE,
-                ativo INTEGER NOT NULL DEFAULT 1
-            )
         """)
 
-        adicionar_coluna(
-            conexao,
-            "setores",
-            "ativo",
-            "INTEGER NOT NULL DEFAULT 1"
+        # =========================
+        # USUÁRIOS
+        # =========================
+
+        conexao.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios(
+            id SERIAL PRIMARY KEY,
+            nome VARCHAR(200) NOT NULL,
+            email VARCHAR(200) UNIQUE NOT NULL,
+            senha TEXT NOT NULL,
+            perfil VARCHAR(50) DEFAULT 'Enfermeiro',
+            ativo BOOLEAN DEFAULT TRUE
         )
-
-        cadastrar_setores_padrao(conexao)
-
-        # ==================================================
-        # TABELA DE RONDAS
-        # ==================================================
-
-        conexao.execute("""
-            CREATE TABLE IF NOT EXISTS rondas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                setor_id INTEGER NOT NULL,
-                data TEXT NOT NULL,
-                hora TEXT NOT NULL,
-                responsavel TEXT NOT NULL,
-                observacoes TEXT,
-                FOREIGN KEY (setor_id)
-                    REFERENCES setores(id)
-            )
         """)
 
-        # ==================================================
-        # TABELA DE PENDÊNCIAS
-        # ==================================================
+        # =========================
+        # RONDAS
+        # =========================
 
         conexao.execute("""
-            CREATE TABLE IF NOT EXISTS pendencias (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ronda_id INTEGER NOT NULL,
-                descricao TEXT NOT NULL,
-                categoria TEXT,
-                prioridade TEXT NOT NULL DEFAULT 'Baixa',
-                status TEXT NOT NULL DEFAULT 'Aberta',
-                responsavel TEXT,
-                prazo TEXT,
-                observacao_resolucao TEXT,
-                foto_antes TEXT,
-                foto_depois TEXT,
-                FOREIGN KEY (ronda_id)
-                    REFERENCES rondas(id)
-                    ON DELETE CASCADE
-            )
-        """)
-
-        adicionar_coluna(
-            conexao,
-            "pendencias",
-            "observacao_resolucao",
-            "TEXT"
+        CREATE TABLE IF NOT EXISTS rondas(
+            id SERIAL PRIMARY KEY,
+            setor_id INTEGER NOT NULL REFERENCES setores(id),
+            data VARCHAR(20) NOT NULL,
+            hora VARCHAR(10) NOT NULL,
+            responsavel VARCHAR(200) NOT NULL,
+            observacoes TEXT
         )
+        """)
 
-        adicionar_coluna(
-            conexao,
-            "pendencias",
-            "foto_antes",
-            "TEXT"
+        # =========================
+        # PENDÊNCIAS
+        # =========================
+
+        conexao.execute("""
+        CREATE TABLE IF NOT EXISTS pendencias(
+            id SERIAL PRIMARY KEY,
+            ronda_id INTEGER NOT NULL REFERENCES rondas(id) ON DELETE CASCADE,
+            descricao TEXT NOT NULL,
+            categoria VARCHAR(100),
+            prioridade VARCHAR(30) DEFAULT 'Baixa',
+            status VARCHAR(30) DEFAULT 'Aberta',
+            responsavel VARCHAR(200),
+            prazo VARCHAR(30),
+            observacao_resolucao TEXT,
+            foto_antes TEXT,
+            foto_depois TEXT
         )
-
-        adicionar_coluna(
-            conexao,
-            "pendencias",
-            "foto_depois",
-            "TEXT"
-        )
-
-        # ==================================================
-        # TABELA DE USUÁRIOS
-        # ==================================================
-
-        conexao.execute("""
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                senha TEXT NOT NULL,
-                perfil TEXT NOT NULL DEFAULT 'Enfermeiro',
-                ativo INTEGER NOT NULL DEFAULT 1
-            )
         """)
-
-        adicionar_coluna(
-            conexao,
-            "usuarios",
-            "perfil",
-            "TEXT NOT NULL DEFAULT 'Enfermeiro'"
-        )
-
-        adicionar_coluna(
-            conexao,
-            "usuarios",
-            "ativo",
-            "INTEGER NOT NULL DEFAULT 1"
-        )
-
-        # ==================================================
-        # ADMINISTRADOR PADRÃO
-        # ==================================================
-
-        administrador = conexao.execute("""
-            SELECT id
-            FROM usuarios
-            WHERE LOWER(email) = LOWER(?)
-        """, (
-            "admin@sgrg.com",
-        )).fetchone()
-
-        if administrador is None:
-
-            senha_hash = generate_password_hash(
-                "123456"
-            )
-
-            conexao.execute("""
-                INSERT INTO usuarios (
-                    nome,
-                    email,
-                    senha,
-                    perfil,
-                    ativo
-                )
-                VALUES (?, ?, ?, ?, ?)
-            """, (
-                "Administrador",
-                "admin@sgrg.com",
-                senha_hash,
-                "Administrador",
-                1
-            ))
-
-        # ==================================================
-        # ÍNDICES
-        # ==================================================
-
         conexao.execute("""
-            CREATE INDEX IF NOT EXISTS
-            indice_rondas_setor
-            ON rondas(setor_id)
+        CREATE INDEX IF NOT EXISTS indice_rondas_setor
+        ON rondas(setor_id)
         """)
 
         conexao.execute("""
-            CREATE INDEX IF NOT EXISTS
-            indice_rondas_data
-            ON rondas(data)
+        CREATE INDEX IF NOT EXISTS indice_rondas_data
+        ON rondas(data)
         """)
 
         conexao.execute("""
-            CREATE INDEX IF NOT EXISTS
-            indice_pendencias_ronda
-            ON pendencias(ronda_id)
+        CREATE INDEX IF NOT EXISTS indice_pendencias_ronda
+        ON pendencias(ronda_id)
         """)
 
         conexao.execute("""
-            CREATE INDEX IF NOT EXISTS
-            indice_pendencias_status
-            ON pendencias(status)
+        CREATE INDEX IF NOT EXISTS indice_pendencias_status
+        ON pendencias(status)
         """)
 
         conexao.execute("""
-            CREATE INDEX IF NOT EXISTS
-            indice_pendencias_prazo
-            ON pendencias(prazo)
+        CREATE INDEX IF NOT EXISTS indice_pendencias_prazo
+        ON pendencias(prazo)
         """)
 
         conexao.commit()
 
-        print(
-            "Banco de dados criado e atualizado com sucesso."
-        )
+        print("Tabelas criadas.")
 
-        print(
-            "Setores da maternidade cadastrados com sucesso."
-        )
+        # =========================
+        # SETORES PADRÃO
+        # =========================
 
-    except sqlite3.Error as erro:
+        cadastrar_setores_padrao(conexao)
+
+        conexao.commit()
+
+        # =========================
+        # ADMIN
+        # =========================
+
+        admin = conexao.execute("""
+            SELECT id
+            FROM usuarios
+            WHERE LOWER(email)=LOWER(?)
+        """, ("admin@sgrg.com",)).fetchone()
+
+        if admin is None:
+
+            conexao.execute("""
+            INSERT INTO usuarios(
+                nome,
+                email,
+                senha,
+                perfil,
+                ativo
+            )
+            VALUES(?,?,?,?,?)
+            """, (
+                "Administrador",
+                "admin@sgrg.com",
+                generate_password_hash("123456"),
+                "Administrador",
+                True
+            ))
+
+            conexao.commit()
+
+            print("Administrador criado.")
+
+        print("Banco criado com sucesso.")
+
+    except Exception as erro:
 
         conexao.rollback()
 
-        print(
-            f"Erro ao criar ou atualizar o banco: {erro}"
-        )
+        raise erro
 
     finally:
 
         conexao.close()
-
 
 if __name__ == "__main__":
 

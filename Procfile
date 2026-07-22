@@ -1,1 +1,1 @@
-web: gunicorn app:app
+web: python criar_banco.py && gunicorn app:app

@@ -79,7 +79,7 @@ def registrar_rotas(app):
         if request.method == "POST":
 
             nome = request.form.get("nome", "").strip()
-            ativo = 1 if request.form.get("ativo") else 0
+            ativo = bool(request.form.get("ativo"))
 
             if not nome:
 
@@ -174,7 +174,7 @@ def registrar_rotas(app):
             if request.method == "POST":
 
                 nome = request.form.get("nome", "").strip()
-                ativo = 1 if request.form.get("ativo") else 0
+                ativo = bool(request.form.get("ativo"))
 
                 if not nome:
 
@@ -265,7 +265,7 @@ def registrar_rotas(app):
 
                 return "Setor não encontrado.", 404
 
-            novo_status = 0 if setor["ativo"] == 1 else 1
+            novo_status = not bool(setor["ativo"])
 
             conexao.execute("""
                 UPDATE setores
@@ -278,7 +278,7 @@ def registrar_rotas(app):
 
             conexao.commit()
 
-            if novo_status == 1:
+            if novo_status:
 
                 mensagem = "Setor ativado com sucesso."
 

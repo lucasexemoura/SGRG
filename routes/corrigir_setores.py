@@ -1,7 +1,4 @@
-import sqlite3
-
-
-BANCO = "sgrg.db"
+from database.conexao import conectar
 
 
 SETORES_OFICIAIS = [
@@ -20,11 +17,9 @@ SETORES_OFICIAIS = [
 
 def corrigir_setores():
 
-    conexao = sqlite3.connect(BANCO)
+    conexao = conectar()
 
     try:
-
-        conexao.execute("PRAGMA foreign_keys = ON")
 
         setores_utilizados = conexao.execute("""
             SELECT DISTINCT setor_id
@@ -32,7 +27,7 @@ def corrigir_setores():
         """).fetchall()
 
         ids_utilizados = {
-            setor[0]
+            setor["setor_id"]
             for setor in setores_utilizados
         }
 
@@ -46,8 +41,10 @@ def corrigir_setores():
             for nome in SETORES_OFICIAIS
         }
 
-        for setor_id, nome in setores_atuais:
+        for setor in setores_atuais:
 
+            setor_id = setor["id"]
+            nome = setor["nome"]
             nome_normalizado = nome.strip().lower()
 
             if nome_normalizado not in nomes_oficiais_normalizados:
@@ -56,20 +53,16 @@ def corrigir_setores():
 
                     conexao.execute("""
                         UPDATE setores
-                        SET ativo = 0
+                        SET ativo = FALSE
                         WHERE id = ?
-                    """, (
-                        setor_id,
-                    ))
+                    """, (setor_id,))
 
                 else:
 
                     conexao.execute("""
                         DELETE FROM setores
                         WHERE id = ?
-                    """, (
-                        setor_id,
-                    ))
+                    """, (setor_id,))
 
         for nome_setor in SETORES_OFICIAIS:
 
@@ -77,33 +70,24 @@ def corrigir_setores():
                 SELECT id
                 FROM setores
                 WHERE LOWER(TRIM(nome)) = LOWER(TRIM(?))
-            """, (
-                nome_setor,
-            )).fetchone()
+            """, (nome_setor,)).fetchone()
 
             if setor_existente is None:
 
                 conexao.execute("""
-                    INSERT INTO setores (
-                        nome,
-                        ativo
-                    )
-                    VALUES (?, 1)
-                """, (
-                    nome_setor,
-                ))
+                    INSERT INTO setores (nome, ativo)
+                    VALUES (?, TRUE)
+                """, (nome_setor,))
 
             else:
 
                 conexao.execute("""
                     UPDATE setores
-                    SET
-                        nome = ?,
-                        ativo = 1
+                    SET nome = ?, ativo = TRUE
                     WHERE id = ?
                 """, (
                     nome_setor,
-                    setor_existente[0]
+                    setor_existente["id"]
                 ))
 
         conexao.commit()
@@ -111,13 +95,11 @@ def corrigir_setores():
         print("Setores corrigidos com sucesso.")
         print("Somente os 10 setores oficiais permanecerão ativos.")
 
-    except sqlite3.Error as erro:
+    except Exception as erro:
 
         conexao.rollback()
-
-        print(
-            f"Erro ao corrigir os setores: {erro}"
-        )
+        print(f"Erro ao corrigir os setores: {erro}")
+        raise
 
     finally:
 

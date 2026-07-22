@@ -29,8 +29,9 @@ def criar_app():
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-    # Altere para True somente quando o sistema usar HTTPS
-    app.config["SESSION_COOKIE_SECURE"] = False
+    app.config["SESSION_COOKIE_SECURE"] = (
+        os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    )
 
     # =====================================================
     # CONFIGURAÇÃO DE UPLOAD

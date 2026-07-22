@@ -145,7 +145,7 @@ def registrar_rotas(app):
                     id,
                     nome
                 FROM setores
-                WHERE ativo = 1
+                WHERE ativo = TRUE
                 ORDER BY nome
             """).fetchall()
 

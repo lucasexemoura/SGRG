@@ -219,7 +219,7 @@ def registrar_rotas(app):
                     pendencias.prazo IS NOT NULL
                     AND pendencias.prazo != ''
                     AND DATE(pendencias.prazo)
-                        < DATE('now', 'localtime')
+                        < CURRENT_DATE
                     AND pendencias.status != 'Resolvida'
                 """)
 
@@ -241,7 +241,7 @@ def registrar_rotas(app):
                         WHEN pendencias.prazo IS NOT NULL
                          AND pendencias.prazo != ''
                          AND DATE(pendencias.prazo)
-                             < DATE('now', 'localtime')
+                             < CURRENT_DATE
                          AND pendencias.status != 'Resolvida'
                         THEN 1
                         ELSE 0
@@ -280,7 +280,7 @@ def registrar_rotas(app):
                     id,
                     nome
                 FROM setores
-                WHERE ativo = 1
+                WHERE ativo = TRUE
                 ORDER BY nome
             """).fetchall()
 

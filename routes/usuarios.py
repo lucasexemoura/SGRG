@@ -86,7 +86,7 @@ def registrar_rotas(app):
             email = request.form.get("email", "").strip().lower()
             senha = request.form.get("senha", "")
             perfil = request.form.get("perfil", "").strip()
-            ativo = 1 if request.form.get("ativo") else 0
+            ativo = bool(request.form.get("ativo"))
 
             if not nome or not email or not senha or not perfil:
 
@@ -216,7 +216,7 @@ def registrar_rotas(app):
                 nome = request.form.get("nome", "").strip()
                 email = request.form.get("email", "").strip().lower()
                 perfil = request.form.get("perfil", "").strip()
-                ativo = 1 if request.form.get("ativo") else 0
+                ativo = bool(request.form.get("ativo"))
 
                 if not nome or not email or not perfil:
 
@@ -270,7 +270,7 @@ def registrar_rotas(app):
 
                 usuario_logado_id = session.get("usuario_id")
 
-                if id == usuario_logado_id and ativo == 0:
+                if id == usuario_logado_id and not ativo:
 
                     flash(
                         "Você não pode desativar o próprio usuário.",
@@ -472,7 +472,7 @@ def registrar_rotas(app):
 
                 return "Usuário não encontrado.", 404
 
-            novo_status = 0 if usuario["ativo"] == 1 else 1
+            novo_status = not bool(usuario["ativo"])
 
             conexao.execute("""
                 UPDATE usuarios
@@ -485,7 +485,7 @@ def registrar_rotas(app):
 
             conexao.commit()
 
-            if novo_status == 1:
+            if novo_status:
 
                 mensagem = "Usuário ativado com sucesso."
 
