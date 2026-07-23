@@ -53,11 +53,19 @@ def conectar():
 
     if DATABASE_URL:
 
+        print("=" * 60)
+        print("USANDO POSTGRESQL")
+        print("=" * 60)
+
         conexao = psycopg2.connect(
             DATABASE_URL
         )
 
         return ConexaoPostgres(conexao)
+
+    print("=" * 60)
+    print("USANDO SQLITE")
+    print("=" * 60)
 
     conexao = sqlite3.connect(
         SQLITE_DATABASE
