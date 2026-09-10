@@ -1566,3 +1566,141 @@ table tbody tr:last-child td {
     }
 
 }
+
+/* ======================================================
+   AUDITORIA ASSISTENCIAL
+====================================================== */
+
+.grid-form-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.checklist-auditoria {
+    display: grid;
+    gap: 18px;
+}
+
+.criterio-auditoria {
+    padding: 20px;
+    background: #f8fafc;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-medio);
+}
+
+.criterio-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.criterio-cabecalho > div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.criterio-numero {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--branco);
+    background: var(--azul);
+    border-radius: 50%;
+    font-weight: 700;
+}
+
+.grid-criterio {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) minmax(280px, 2fr);
+    gap: 18px;
+}
+
+.grid-criterio .grupo-formulario {
+    margin-bottom: 0;
+}
+
+.grid-criterio textarea {
+    min-height: 82px;
+}
+
+.margem-inferior {
+    margin-bottom: 20px;
+}
+
+.aviso-neutro {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    color: var(--texto-secundario);
+    background: #f8fafc;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-pequeno);
+}
+
+.painel-expansivel {
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-medio);
+    overflow: hidden;
+}
+
+.painel-expansivel summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 18px;
+    cursor: pointer;
+    color: var(--azul);
+    background: #f8fafc;
+    font-weight: 700;
+}
+
+.painel-expansivel form {
+    padding: 20px;
+    border-top: 1px solid var(--borda);
+}
+
+.form-status-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 220px;
+}
+
+.form-status-inline select {
+    min-width: 150px;
+    padding: 8px 10px;
+}
+
+body.tema-escuro .criterio-auditoria,
+body.tema-escuro .aviso-neutro,
+body.tema-escuro .painel-expansivel summary {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+@media (max-width: 1000px) {
+    .grid-form-3,
+    .grid-criterio {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .grupo-observacao {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 650px) {
+    .grid-form-3,
+    .grid-criterio {
+        grid-template-columns: 1fr;
+    }
+
+    .grupo-observacao {
+        grid-column: auto;
+    }
+}

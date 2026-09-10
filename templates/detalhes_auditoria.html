@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block titulo %}Auditoria #{{ auditoria['id'] }} | SGRG{% endblock %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+    <div>
+        <h1 class="titulo-pagina">Auditoria #{{ auditoria['id'] }}</h1>
+        <p class="subtitulo">{{ auditoria['setor'] }} · {{ auditoria['data'] }}</p>
+    </div>
+    <a href="{{ url_for('auditorias') }}" class="btn btn-secondary">
+        <i class="fa-solid fa-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<div class="dashboard-cards">
+    <div class="dashboard-card">
+        <div class="icone azul"><i class="fa-solid fa-folder-open"></i></div>
+        <div>
+            <small>Prontuários revisados</small>
+            <h2>{{ auditoria['quantidade_prontuarios'] }}</h2>
+        </div>
+    </div>
+    <div class="dashboard-card">
+        <div class="icone {% if conformidade_geral >= 90 %}verde{% elif conformidade_geral >= 70 %}amarelo{% else %}vermelho{% endif %}">
+            <i class="fa-solid fa-percent"></i>
+        </div>
+        <div>
+            <small>Conformidade geral</small>
+            <h2>{{ conformidade_geral }}%</h2>
+        </div>
+    </div>
+    <div class="dashboard-card">
+        <div class="icone roxo"><i class="fa-solid fa-user-nurse"></i></div>
+        <div>
+            <small>Responsável</small>
+            <h3>{{ auditoria['responsavel'] }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="cabecalho-card">
+        <div>
+            <h2>Resultado do checklist</h2>
+            <small>Resumo quantitativo dos critérios revisados.</small>
+        </div>
+    </div>
+
+    <div class="tabela-responsiva">
+        <table>
+            <thead>
+                <tr>
+                    <th>Critério</th>
+                    <th>Revisados</th>
+                    <th>Conformes</th>
+                    <th>Não conformes</th>
+                    <th>Conformidade</th>
+                    <th>Observações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for resultado in resultados %}
+                    <tr>
+                        <td><strong>{{ resultado['titulo'] }}</strong></td>
+                        <td>{{ auditoria['quantidade_prontuarios'] }}</td>
+                        <td>{{ resultado['conformes'] }}</td>
+                        <td>{{ resultado['nao_conformes'] }}</td>
+                        <td>
+                            <span class="badge {% if resultado['percentual'] >= 90 %}verde{% elif resultado['percentual'] >= 70 %}amarelo{% else %}vermelho{% endif %}">
+                                {{ resultado['percentual'] }}%
+                            </span>
+                        </td>
+                        <td>{{ resultado['observacao'] or '—' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="cabecalho-card">
+        <div>
+            <h2>Gráfico de conformidade</h2>
+            <small>Comparação percentual entre os critérios auditados.</small>
+        </div>
+    </div>
+    <div class="grafico-container grafico-horizontal">
+        <canvas id="graficoAuditoria"></canvas>
+    </div>
+</div>
+
+<div class="card">
+    <div class="cabecalho-card">
+        <div>
+            <h2>Plano de ação</h2>
+            <small>Acompanhe as providências definidas após a auditoria.</small>
+        </div>
+    </div>
+
+    {% if planos %}
+        <div class="tabela-responsiva margem-inferior">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Problema</th>
+                        <th>Ação corretiva</th>
+                        <th>Responsável</th>
+                        <th>Prazo</th>
+                        <th>Prioridade</th>
+                        <th>Status</th>
+                        <th>Atualizar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plano in planos %}
+                        <tr class="{% if plano['atrasado'] %}linha-atrasada{% endif %}">
+                            <td>{{ plano['problema'] }}</td>
+                            <td>{{ plano['acao'] }}</td>
+                            <td>{{ plano['responsavel'] or '—' }}</td>
+                            <td>
+                                {{ plano['prazo'] or '—' }}
+                                {% if plano['atrasado'] %}<span class="badge vermelho">Atrasado</span>{% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if plano['prioridade'] == 'Urgente' %}vermelho{% elif plano['prioridade'] == 'Alta' %}laranja{% elif plano['prioridade'] == 'Média' %}amarelo{% else %}verde{% endif %}">
+                                    {{ plano['prioridade'] }}
+                                </span>
+                            </td>
+                            <td>{{ plano['status'] }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('atualizar_status_plano_auditoria', id=plano['id']) }}" class="form-status-inline">
+                                    <select name="status" aria-label="Status do plano de ação">
+                                        {% for status in ['Pendente', 'Em andamento', 'Concluído'] %}
+                                            <option value="{{ status }}" {% if plano['status'] == status %}selected{% endif %}>{{ status }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-outline btn-sm" title="Salvar status">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="aviso-neutro">
+            <i class="fa-solid fa-circle-info"></i>
+            Nenhuma ação foi cadastrada para esta auditoria.
+        </div>
+    {% endif %}
+
+    <details class="painel-expansivel">
+        <summary><i class="fa-solid fa-plus"></i> Adicionar ação</summary>
+        <form method="POST" action="{{ url_for('adicionar_plano_acao', id=auditoria['id']) }}">
+            <div class="grid-form">
+                <div class="grupo-formulario">
+                    <label for="problema">Problema identificado</label>
+                    <textarea id="problema" name="problema" required></textarea>
+                </div>
+                <div class="grupo-formulario">
+                    <label for="acao">Ação corretiva</label>
+                    <textarea id="acao" name="acao" required></textarea>
+                </div>
+                <div class="grupo-formulario">
+                    <label for="responsavel">Responsável</label>
+                    <input id="responsavel" type="text" name="responsavel">
+                </div>
+                <div class="grupo-formulario">
+                    <label for="prazo">Prazo</label>
+                    <input id="prazo" type="date" name="prazo">
+                </div>
+                <div class="grupo-formulario">
+                    <label for="prioridade">Prioridade</label>
+                    <select id="prioridade" name="prioridade">
+                        <option>Baixa</option>
+                        <option selected>Média</option>
+                        <option>Alta</option>
+                        <option>Urgente</option>
+                    </select>
+                </div>
+            </div>
+            <div class="acoes-form">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Adicionar ao plano
+                </button>
+            </div>
+        </form>
+    </details>
+</div>
+
+<div class="card">
+    <div class="cabecalho-card">
+        <div>
+            <h2>Conclusão</h2>
+            <small>Parecer final, orientações e encaminhamentos.</small>
+        </div>
+    </div>
+    <form method="POST" action="{{ url_for('atualizar_conclusao_auditoria', id=auditoria['id']) }}">
+        <div class="grupo-formulario">
+            <label for="conclusao">Conclusão da auditoria</label>
+            <textarea id="conclusao" name="conclusao" placeholder="Registre a conclusão da auditoria.">{{ auditoria['conclusao'] or '' }}</textarea>
+        </div>
+        <div class="acoes-form">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> Salvar conclusão
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const titulos = {{ resultados | map(attribute='titulo') | list | tojson }};
+    const percentuais = {{ resultados | map(attribute='percentual') | list | tojson }};
+
+    new Chart(document.getElementById("graficoAuditoria"), {
+        type: "bar",
+        data: {
+            labels: titulos,
+            datasets: [{
+                label: "Conformidade (%)",
+                data: percentuais,
+                backgroundColor: percentuais.map(valor =>
+                    valor >= 90 ? "#2e7d32" : valor >= 70 ? "#fbc02d" : "#d32f2f"
+                ),
+                borderRadius: 8
+            }]
+        },
+        options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { x: { beginAtZero: true, max: 100 } },
+            plugins: { legend: { display: false } }
+        }
+    });
+</script>
+
+{% endblock %}

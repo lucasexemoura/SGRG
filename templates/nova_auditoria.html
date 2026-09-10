@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block titulo %}Nova Auditoria | SGRG{% endblock %}
+
+{% block conteudo %}
+
+<div class="cabecalho-pagina">
+    <div>
+        <h1 class="titulo-pagina">Nova Auditoria</h1>
+        <p class="subtitulo">
+            Informe a quantidade total revisada e quantos prontuários estavam conformes em cada critério.
+        </p>
+    </div>
+    <a href="{{ url_for('auditorias') }}" class="btn btn-secondary">
+        <i class="fa-solid fa-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<form method="POST" id="formAuditoria">
+    <div class="card">
+        <div class="cabecalho-card">
+            <div>
+                <h2>1. Identificação</h2>
+                <small>Dados gerais da passagem pelo setor.</small>
+            </div>
+        </div>
+
+        <div class="grid-form">
+            <div class="grupo-formulario">
+                <label for="data">Data da auditoria</label>
+                <input id="data" type="date" name="data"
+                       value="{{ request.form.get('data', data_hoje) }}" required>
+            </div>
+
+            <div class="grupo-formulario">
+                <label for="setor_id">Setor auditado</label>
+                <select id="setor_id" name="setor_id" required>
+                    <option value="">Selecione o setor</option>
+                    {% for setor in setores %}
+                        <option value="{{ setor['id'] }}"
+                                {% if request.form.get('setor_id')|string == setor['id']|string %}selected{% endif %}>
+                            {{ setor['nome'] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grupo-formulario">
+                <label for="responsavel">Responsável pela auditoria</label>
+                <input id="responsavel" type="text" name="responsavel"
+                       value="{{ request.form.get('responsavel', usuario_nome or '') }}" required>
+            </div>
+
+            <div class="grupo-formulario">
+                <label for="quantidade_prontuarios">Quantidade de prontuários revisados</label>
+                <input id="quantidade_prontuarios" type="number" name="quantidade_prontuarios"
+                       min="1" step="1" value="{{ request.form.get('quantidade_prontuarios', '') }}"
+                       placeholder="Ex.: 20" required>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="cabecalho-card">
+            <div>
+                <h2>2. Checklist dos prontuários</h2>
+                <small>Digite somente a quantidade conforme. O sistema calcula as não conformidades e o percentual.</small>
+            </div>
+        </div>
+
+        <div class="checklist-auditoria">
+            {% for campo, titulo in criterios %}
+                <section class="criterio-auditoria" data-criterio>
+                    <div class="criterio-cabecalho">
+                        <div>
+                            <span class="criterio-numero">{{ loop.index }}</span>
+                            <strong>{{ titulo }}</strong>
+                        </div>
+                        <span class="badge cinza" data-percentual>0%</span>
+                    </div>
+
+                    <div class="grid-criterio">
+                        <div class="grupo-formulario">
+                            <label for="{{ campo }}">Quantidade conforme</label>
+                            <input id="{{ campo }}" type="number" name="{{ campo }}"
+                                   min="0" step="1" value="{{ request.form.get(campo, '0') }}"
+                                   data-conformes required>
+                        </div>
+
+                        <div class="grupo-formulario">
+                            <label>Quantidade não conforme</label>
+                            <input type="number" value="0" data-nao-conformes disabled>
+                        </div>
+
+                        <div class="grupo-formulario grupo-observacao">
+                            <label for="{{ campo }}_obs">Observações</label>
+                            <textarea id="{{ campo }}_obs" name="{{ campo }}_obs"
+                                      placeholder="Descreva as irregularidades encontradas, se houver.">{{ request.form.get(campo + '_obs', '') }}</textarea>
+                        </div>
+                    </div>
+                </section>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="cabecalho-card">
+            <div>
+                <h2>3. Plano de ação inicial</h2>
+                <small>Opcional. Novas ações também poderão ser incluídas depois.</small>
+            </div>
+        </div>
+
+        <div class="grid-form">
+            <div class="grupo-formulario">
+                <label for="problema">Problema identificado</label>
+                <textarea id="problema" name="problema" placeholder="Qual não conformidade precisa ser corrigida?">{{ request.form.get('problema', '') }}</textarea>
+            </div>
+            <div class="grupo-formulario">
+                <label for="acao">Ação corretiva</label>
+                <textarea id="acao" name="acao" placeholder="O que será feito para corrigir o problema?">{{ request.form.get('acao', '') }}</textarea>
+            </div>
+            <div class="grupo-formulario">
+                <label for="plano_responsavel">Responsável pela ação</label>
+                <input id="plano_responsavel" type="text" name="plano_responsavel"
+                       value="{{ request.form.get('plano_responsavel', '') }}">
+            </div>
+            <div class="grupo-formulario">
+                <label for="prazo">Prazo</label>
+                <input id="prazo" type="date" name="prazo" value="{{ request.form.get('prazo', '') }}">
+            </div>
+            <div class="grupo-formulario">
+                <label for="prioridade">Prioridade</label>
+                <select id="prioridade" name="prioridade">
+                    {% for prioridade in ['Baixa', 'Média', 'Alta', 'Urgente'] %}
+                        <option value="{{ prioridade }}"
+                                {% if request.form.get('prioridade', 'Média') == prioridade %}selected{% endif %}>
+                            {{ prioridade }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="cabecalho-card">
+            <div>
+                <h2>4. Conclusão</h2>
+                <small>Registre o parecer final e as orientações repassadas à equipe.</small>
+            </div>
+        </div>
+
+        <div class="grupo-formulario">
+            <label for="conclusao">Conclusão da auditoria</label>
+            <textarea id="conclusao" name="conclusao"
+                      placeholder="Descreva o resultado geral, orientações e encaminhamentos.">{{ request.form.get('conclusao', '') }}</textarea>
+        </div>
+
+        <div class="acoes-form">
+            <a href="{{ url_for('auditorias') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-xmark"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> Salvar Auditoria
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const total = document.getElementById("quantidade_prontuarios");
+        const criterios = document.querySelectorAll("[data-criterio]");
+
+        function atualizarCalculos() {
+            const quantidade = Math.max(parseInt(total.value || "0", 10), 0);
+
+            criterios.forEach(function (criterio) {
+                const campoConformes = criterio.querySelector("[data-conformes]");
+                const campoNaoConformes = criterio.querySelector("[data-nao-conformes]");
+                const badge = criterio.querySelector("[data-percentual]");
+                const conformes = Math.max(parseInt(campoConformes.value || "0", 10), 0);
+                const naoConformes = Math.max(quantidade - conformes, 0);
+                const percentual = quantidade ? (conformes / quantidade * 100) : 0;
+
+                campoConformes.max = quantidade || "";
+                campoNaoConformes.value = naoConformes;
+                badge.textContent = percentual.toFixed(1).replace(".0", "") + "%";
+                badge.className = "badge " + (
+                    percentual >= 90 ? "verde" : percentual >= 70 ? "amarelo" : "vermelho"
+                );
+            });
+        }
+
+        total.addEventListener("input", atualizarCalculos);
+        criterios.forEach(function (criterio) {
+            criterio.querySelector("[data-conformes]")
+                .addEventListener("input", atualizarCalculos);
+        });
+        atualizarCalculos();
+    });
+</script>
+
+{% endblock %}

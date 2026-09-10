@@ -112,6 +112,16 @@
             </a>
 
 
+            <a href="{{ url_for('auditorias') }}"
+               class="{% if request.endpoint in ['auditorias', 'nova_auditoria', 'detalhes_auditoria', 'adicionar_plano_acao', 'atualizar_status_plano_auditoria', 'atualizar_conclusao_auditoria'] %}ativo{% endif %}">
+
+                <i class="fa-solid fa-clipboard-check"></i>
+
+                <span>Auditoria</span>
+
+            </a>
+
+
             {% if usuario_perfil == "Administrador" %}
 
                 <span class="menu-titulo">

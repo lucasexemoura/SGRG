@@ -8,6 +8,7 @@ from routes.historico import registrar_rotas as historico_rotas
 from routes.pendencias import registrar_rotas as pendencias_rotas
 from routes.usuarios import registrar_rotas as usuarios_rotas
 from routes.setores import registrar_rotas as setores_rotas
+from routes.auditorias import registrar_rotas as auditorias_rotas
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -77,6 +78,7 @@ def criar_app():
     pendencias_rotas(app)
     usuarios_rotas(app)
     setores_rotas(app)
+    auditorias_rotas(app)
 
     # =====================================================
     # TRATAMENTO DE ERROS
