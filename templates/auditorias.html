@@ -134,7 +134,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Auditoria</th>
+                        <th>Nome da auditoria</th>
                         <th>Data</th>
                         <th>Setor</th>
                         <th>Responsável</th>
@@ -148,7 +148,7 @@
                         {% set soma = auditoria['aprazamento_medicamentos'] + auditoria['checagem_medicamentos'] + auditoria['evolucao_enfermagem'] + auditoria['evolucao_tecnico'] + auditoria['solicitacoes_farmacia'] + auditoria['solicitacoes_lavanderia'] %}
                         {% set percentual = (soma / (auditoria['quantidade_prontuarios'] * 6) * 100)|round(1) %}
                         <tr>
-                            <td><strong>#{{ auditoria['id'] }}</strong></td>
+                            <td style="overflow-wrap: anywhere;"><strong>{{ auditoria['nome'] }}</strong></td>
                             <td>{{ auditoria['data'] }}</td>
                             <td>{{ auditoria['setor'] }}</td>
                             <td>{{ auditoria['responsavel'] }}</td>

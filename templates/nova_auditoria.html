@@ -25,6 +25,13 @@
             </div>
         </div>
 
+        <div class="grupo-formulario">
+            <label for="nome">Nome da auditoria</label>
+            <input id="nome" type="text" name="nome" maxlength="200" required
+                   value="{{ request.form.get('nome', '') }}"
+                   placeholder="Ex.: Revisão mensal da UTI Neonatal">
+        </div>
+
         <div class="grid-form">
             <div class="grupo-formulario">
                 <label for="data">Data da auditoria</label>

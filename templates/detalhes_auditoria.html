@@ -1,18 +1,50 @@
 {% extends "base.html" %}
 
-{% block titulo %}Auditoria #{{ auditoria['id'] }} | SGRG{% endblock %}
+{% block titulo %}{{ auditoria['nome'] }} | SGRG{% endblock %}
 
 {% block conteudo %}
 
-<div class="cabecalho-pagina">
-    <div>
-        <h1 class="titulo-pagina">Auditoria #{{ auditoria['id'] }}</h1>
+<div class="cabecalho-pagina" style="flex-wrap: wrap;">
+    <div style="min-width: 0;">
+        <h1 class="titulo-pagina" style="overflow-wrap: anywhere;">{{ auditoria['nome'] }}</h1>
         <p class="subtitulo">{{ auditoria['setor'] }} · {{ auditoria['data'] }}</p>
     </div>
-    <a href="{{ url_for('auditorias') }}" class="btn btn-secondary">
-        <i class="fa-solid fa-arrow-left"></i> Voltar
-    </a>
+    <div class="acoes-form">
+        <a href="{{ url_for('relatorio_auditoria', id=auditoria['id']) }}"
+           class="btn btn-primary" target="_blank" rel="noopener">
+            <i class="fa-solid fa-print"></i> Imprimir relatório / PDF
+        </a>
+        <form method="POST" action="{{ url_for('excluir_auditoria', id=auditoria['id']) }}"
+              data-nome="{{ auditoria['nome'] }}"
+              onsubmit="return confirm('Excluir a auditoria ' + this.dataset.nome + '? A auditoria e suas ações vinculadas serão apagadas. Esta ação não pode ser desfeita.');">
+            <input type="hidden" name="token_auditoria" value="{{ token_auditoria }}">
+            <button type="submit" class="btn btn-danger">
+                <i class="fa-solid fa-trash"></i> Excluir auditoria
+            </button>
+        </form>
+        <a href="{{ url_for('auditorias') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
+    </div>
 </div>
+<p class="subtitulo">O relatório usa os dados salvos. Salve a conclusão antes de gerar o PDF.</p>
+
+<details class="painel-expansivel margem-inferior">
+    <summary><i class="fa-solid fa-pen"></i> Alterar nome da auditoria</summary>
+    <form method="POST" action="{{ url_for('renomear_auditoria', id=auditoria['id']) }}">
+        <input type="hidden" name="token_auditoria" value="{{ token_auditoria }}">
+        <div class="grupo-formulario">
+            <label for="nome_auditoria">Nome da auditoria</label>
+            <input id="nome_auditoria" type="text" name="nome" maxlength="200" required
+                   value="{{ auditoria['nome'] }}">
+        </div>
+        <div class="acoes-form">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> Salvar nome
+            </button>
+        </div>
+    </form>
+</details>
 
 <div class="dashboard-cards">
     <div class="dashboard-card">

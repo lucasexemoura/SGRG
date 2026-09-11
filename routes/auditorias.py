@@ -1,8 +1,11 @@
 from datetime import date, datetime
+import secrets
 
-from flask import flash, redirect, render_template, request, session, url_for
+from flask import abort, flash, redirect, render_template, request, send_file, session, url_for
+from werkzeug.utils import secure_filename
 
 from database.conexao import DATABASE_URL, conectar
+from pdf.relatorio_auditoria import gerar_relatorio_auditoria_pdf
 
 
 CRITERIOS = [
@@ -25,6 +28,7 @@ def garantir_tabelas_auditoria(conexao):
     conexao.execute(f"""
         CREATE TABLE IF NOT EXISTS auditorias (
             id {chave_primaria},
+            nome VARCHAR(200),
             setor_id INTEGER NOT NULL REFERENCES setores(id),
             data VARCHAR(20) NOT NULL,
             responsavel VARCHAR(200) NOT NULL,
@@ -46,6 +50,22 @@ def garantir_tabelas_auditoria(conexao):
             criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # Acrescenta o nome aos bancos já existentes sem alterar seus registros.
+    if DATABASE_URL:
+        coluna_nome = conexao.execute("""
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = current_schema()
+              AND table_name = 'auditorias' AND column_name = 'nome'
+        """).fetchone()
+        if coluna_nome is None:
+            conexao.execute("""
+                ALTER TABLE auditorias ADD COLUMN IF NOT EXISTS nome VARCHAR(200)
+            """)
+    else:
+        colunas = conexao.execute("PRAGMA table_info(auditorias)").fetchall()
+        if not any(coluna["name"] == "nome" for coluna in colunas):
+            conexao.execute("ALTER TABLE auditorias ADD COLUMN nome VARCHAR(200)")
 
     conexao.execute(f"""
         CREATE TABLE IF NOT EXISTS planos_acao_auditoria (
@@ -90,6 +110,38 @@ def numero_inteiro(valor, nome_campo, minimo=0):
     return numero
 
 
+def validar_nome(valor):
+    nome = " ".join((valor or "").split())
+    if not nome or len(nome) > 200:
+        raise ValueError("Informe um nome para a auditoria com até 200 caracteres.")
+    return nome
+
+
+def token_formulario_auditoria():
+    if "token_auditoria" not in session:
+        session["token_auditoria"] = secrets.token_urlsafe(32)
+    return session["token_auditoria"]
+
+
+def validar_token_auditoria():
+    esperado = session.get("token_auditoria", "")
+    recebido = request.form.get("token_auditoria", "")
+    if not esperado or not secrets.compare_digest(esperado.encode(), recebido.encode()):
+        abort(400, description="Atualize a página da auditoria e tente novamente.")
+
+
+def preparar_auditoria(registro):
+    auditoria = dict(registro)
+    if not (auditoria.get("nome") or "").strip():
+        data_texto = str(auditoria["data"])
+        try:
+            data_texto = date.fromisoformat(data_texto[:10]).strftime("%d/%m/%Y")
+        except ValueError:
+            pass
+        auditoria["nome"] = f"Revisão - {auditoria['setor']} - {data_texto}"[:200]
+    return auditoria
+
+
 def montar_resultados(auditoria):
     total = auditoria["quantidade_prontuarios"]
     resultados = []
@@ -108,6 +160,29 @@ def montar_resultados(auditoria):
         })
 
     return resultados
+
+
+def carregar_detalhes_auditoria(conexao, id):
+    auditoria = conexao.execute("""
+        SELECT auditorias.*, setores.nome AS setor
+        FROM auditorias
+        INNER JOIN setores ON setores.id = auditorias.setor_id
+        WHERE auditorias.id = ?
+    """, (id,)).fetchone()
+    if auditoria is None:
+        return None, []
+    planos = conexao.execute("""
+        SELECT *,
+            CASE
+                WHEN DATE(NULLIF(prazo, '')) < CURRENT_DATE
+                 AND status != 'Concluído'
+                THEN 1 ELSE 0
+            END AS atrasado
+        FROM planos_acao_auditoria
+        WHERE auditoria_id = ?
+        ORDER BY id DESC
+    """, (id,)).fetchall()
+    return preparar_auditoria(auditoria), planos
 
 
 def registrar_rotas(app):
@@ -148,6 +223,7 @@ def registrar_rotas(app):
                 {clausula_where}
                 ORDER BY auditorias.data DESC, auditorias.id DESC
             """, parametros).fetchall()
+            registros = [preparar_auditoria(item) for item in registros]
 
             setores = conexao.execute("""
                 SELECT id, nome
@@ -211,6 +287,7 @@ def registrar_rotas(app):
 
             if request.method == "POST":
                 try:
+                    nome = validar_nome(request.form.get("nome"))
                     setor_id = request.form.get("setor_id", "").strip()
                     data_auditoria = request.form.get("data", "").strip()
                     responsavel = request.form.get("responsavel", "").strip()
@@ -245,7 +322,7 @@ def registrar_rotas(app):
 
                     consulta_insercao = """
                         INSERT INTO auditorias (
-                            setor_id, data, responsavel,
+                            nome, setor_id, data, responsavel,
                             quantidade_prontuarios,
                             aprazamento_medicamentos,
                             aprazamento_medicamentos_obs,
@@ -261,14 +338,14 @@ def registrar_rotas(app):
                             solicitacoes_lavanderia_obs,
                             conclusao, criado_por
                         )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """
 
                     if DATABASE_URL:
                         consulta_insercao += " RETURNING id"
 
                     cursor = conexao.execute(consulta_insercao, (
-                        setor_id, data_auditoria, responsavel, quantidade,
+                        nome, setor_id, data_auditoria, responsavel, quantidade,
                         valores["aprazamento_medicamentos"],
                         observacoes["aprazamento_medicamentos"],
                         valores["checagem_medicamentos"],
@@ -340,28 +417,10 @@ def registrar_rotas(app):
 
         try:
             garantir_tabelas_auditoria(conexao)
-            auditoria = conexao.execute("""
-                SELECT auditorias.*, setores.nome AS setor
-                FROM auditorias
-                INNER JOIN setores ON setores.id = auditorias.setor_id
-                WHERE auditorias.id = ?
-            """, (id,)).fetchone()
+            auditoria, planos = carregar_detalhes_auditoria(conexao, id)
 
             if auditoria is None:
                 return "Auditoria não encontrada.", 404
-
-            planos = conexao.execute("""
-                SELECT *,
-                    CASE
-                        WHEN prazo IS NOT NULL AND prazo != ''
-                         AND DATE(prazo) < CURRENT_DATE
-                         AND status != 'Concluído'
-                        THEN 1 ELSE 0
-                    END AS atrasado
-                FROM planos_acao_auditoria
-                WHERE auditoria_id = ?
-                ORDER BY id DESC
-            """, (id,)).fetchall()
 
             resultados = montar_resultados(auditoria)
             conformidade_geral = round(
@@ -376,9 +435,83 @@ def registrar_rotas(app):
                 resultados=resultados,
                 planos=planos,
                 conformidade_geral=conformidade_geral,
+                token_auditoria=token_formulario_auditoria(),
             )
         finally:
             conexao.close()
+
+    @app.route("/auditorias/<int:id>/relatorio.pdf")
+    def relatorio_auditoria(id):
+        conexao = conectar()
+        try:
+            garantir_tabelas_auditoria(conexao)
+            auditoria, planos = carregar_detalhes_auditoria(conexao, id)
+        finally:
+            conexao.close()
+        if auditoria is None:
+            return "Auditoria não encontrada.", 404
+
+        resultados = montar_resultados(auditoria)
+        conformidade_geral = round(
+            sum(item["percentual"] for item in resultados) / len(resultados), 1,
+        ) if resultados else 0
+        arquivo = gerar_relatorio_auditoria_pdf(
+            auditoria, resultados, planos, conformidade_geral,
+        )
+        resposta = send_file(
+            arquivo, mimetype="application/pdf", as_attachment=False,
+            download_name=f"{secure_filename(auditoria['nome']) or f'auditoria_{id}'}.pdf",
+            max_age=0,
+        )
+        resposta.headers["Cache-Control"] = "private, no-store"
+        resposta.headers["X-Content-Type-Options"] = "nosniff"
+        return resposta
+
+    @app.route("/auditorias/<int:id>/nome", methods=["POST"])
+    def renomear_auditoria(id):
+        validar_token_auditoria()
+        conexao = conectar()
+        try:
+            garantir_tabelas_auditoria(conexao)
+            existe = conexao.execute(
+                "SELECT id FROM auditorias WHERE id = ?", (id,),
+            ).fetchone()
+            if existe is None:
+                return "Auditoria não encontrada.", 404
+            try:
+                nome = validar_nome(request.form.get("nome"))
+            except ValueError as erro:
+                flash(str(erro), "danger")
+            else:
+                conexao.execute("UPDATE auditorias SET nome = ? WHERE id = ?", (nome, id))
+                conexao.commit()
+                flash("Nome da auditoria atualizado.", "success")
+            return redirect(url_for("detalhes_auditoria", id=id))
+        finally:
+            conexao.close()
+
+    @app.route("/auditorias/<int:id>/excluir", methods=["POST"])
+    def excluir_auditoria(id):
+        validar_token_auditoria()
+        conexao = conectar()
+        try:
+            garantir_tabelas_auditoria(conexao)
+            existe = conexao.execute(
+                "SELECT id FROM auditorias WHERE id = ?", (id,),
+            ).fetchone()
+            if existe is None:
+                return "Auditoria não encontrada.", 404
+            # Mantém a remoção completa também no SQLite sem foreign_keys ativo.
+            conexao.execute("DELETE FROM planos_acao_auditoria WHERE auditoria_id = ?", (id,))
+            conexao.execute("DELETE FROM auditorias WHERE id = ?", (id,))
+            conexao.commit()
+        except Exception:
+            conexao.rollback()
+            raise
+        finally:
+            conexao.close()
+        flash("Auditoria e ações vinculadas excluídas.", "success")
+        return redirect(url_for("auditorias"))
 
     @app.route("/auditorias/<int:id>/plano-acao", methods=["POST"])
     def adicionar_plano_acao(id):

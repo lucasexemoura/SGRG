@@ -133,6 +133,7 @@ def criar_banco():
         conexao.execute(f"""
         CREATE TABLE IF NOT EXISTS auditorias(
             id {chave_primaria},
+            nome VARCHAR(200),
             setor_id INTEGER NOT NULL REFERENCES setores(id),
             data VARCHAR(20) NOT NULL,
             responsavel VARCHAR(200) NOT NULL,
