@@ -44,11 +44,11 @@ def _data(valor):
 
 
 def _percentual(valor):
-    return f"{valor:.1f}%".replace(".", ",")
+    return f"{valor:.1f}%".replace(".", ",") if valor is not None else "-"
 
 
 def _grafico(resultados, largura):
-    """Desenha as seis barras no próprio PDF, sem depender do navegador."""
+    """Desenha uma barra por tópico no PDF, sem depender do navegador."""
     altura_linha = 22
     altura = len(resultados) * altura_linha + 35
     desenho = Drawing(largura, altura)
@@ -68,7 +68,7 @@ def _grafico(resultados, largura):
                            fontSize=8, fillColor=CINZA))
         desenho.add(Rect(inicio_x, y - 2, largura_barras, 12,
                          fillColor=CLARO, strokeColor=None))
-        if percentual > 0:
+        if percentual is not None and percentual > 0:
             desenho.add(Rect(inicio_x, y - 2,
                              largura_barras * min(percentual, 100) / 100, 12,
                              fillColor=AZUL, strokeColor=None))
@@ -123,8 +123,8 @@ def gerar_relatorio_auditoria_pdf(auditoria, resultados, planos, conformidade_ge
         [paragrafo("Data", rotulo), paragrafo(_data(auditoria["data"]), celula),
          paragrafo("Setor", rotulo), paragrafo(auditoria["setor"], celula)],
         [paragrafo("Responsável", rotulo), paragrafo(auditoria["responsavel"], celula), "", ""],
-        [paragrafo("Prontuários revisados", rotulo),
-         paragrafo(auditoria["quantidade_prontuarios"], celula),
+        [paragrafo("Itens avaliados", rotulo),
+         paragrafo(auditoria["total_avaliado"], celula),
          paragrafo("Conformidade geral", rotulo),
          paragrafo(_percentual(conformidade_geral), celula)],
     ], colWidths=[documento.width * parte for parte in (0.17, 0.18, 0.20, 0.45)],
@@ -143,11 +143,11 @@ def gerar_relatorio_auditoria_pdf(auditoria, resultados, planos, conformidade_ge
     elementos.extend([identificacao, paragrafo("Resultado do checklist", secao)])
 
     linhas = [[paragrafo(texto, cabecalho) for texto in
-               ("Critério", "Revisados", "Conformes", "Não conformes", "Conformidade")]]
+               ("Tópico", "Total avaliado", "Conformes", "Não conformes", "Conformidade")]]
     for resultado in resultados:
         linhas.append([
             paragrafo(resultado["titulo"], celula),
-            paragrafo(auditoria["quantidade_prontuarios"], celula),
+            paragrafo(resultado["total"], celula),
             paragrafo(resultado["conformes"], celula),
             paragrafo(resultado["nao_conformes"], celula),
             paragrafo(_percentual(resultado["percentual"]), celula),
@@ -166,7 +166,11 @@ def gerar_relatorio_auditoria_pdf(auditoria, resultados, planos, conformidade_ge
     elementos.extend([
         tabela,
         Spacer(1, 6),
-        paragrafo("Cada critério considera a quantidade de prontuários revisados nesta auditoria.", pequeno),
+        paragrafo("Cada tópico tem seu próprio total (conformes + não conformes). A conformidade geral considera a soma dos itens conformes dividida pelo total dos tópicos avaliados. Tópicos sem avaliação não entram no cálculo.", pequeno),
+    ])
+    if auditoria.get("prontuarios_revisados") is None:
+        elementos.append(paragrafo("Neste registro, foi informada apenas a quantidade de prontuários. A conformidade desse tópico não foi registrada.", pequeno))
+    elementos.extend([
         paragrafo("Gráfico de conformidade", secao),
         _grafico(resultados, documento.width),
         paragrafo("Observações do checklist", secao),

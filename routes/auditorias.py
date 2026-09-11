@@ -9,6 +9,7 @@ from pdf.relatorio_auditoria import gerar_relatorio_auditoria_pdf
 
 
 CRITERIOS = [
+    ("prontuarios_revisados", "Prontuários revisados"),
     ("aprazamento_medicamentos", "Aprazamento de medicamentos"),
     ("checagem_medicamentos", "Checagem de medicamentos"),
     ("evolucao_enfermagem", "Evolução de enfermagem"),
@@ -33,6 +34,8 @@ def garantir_tabelas_auditoria(conexao):
             data VARCHAR(20) NOT NULL,
             responsavel VARCHAR(200) NOT NULL,
             quantidade_prontuarios INTEGER NOT NULL,
+            prontuarios_revisados INTEGER,
+            prontuarios_revisados_obs TEXT,
             aprazamento_medicamentos INTEGER NOT NULL DEFAULT 0,
             aprazamento_medicamentos_obs TEXT,
             checagem_medicamentos INTEGER NOT NULL DEFAULT 0,
@@ -51,21 +54,32 @@ def garantir_tabelas_auditoria(conexao):
         )
     """)
 
-    # Acrescenta o nome aos bancos já existentes sem alterar seus registros.
+    # Colunas adicionais preservam os registros das versões anteriores.
+    # Não conformidades antigas continuam sendo calculadas a partir da amostra
+    # original, somente quando não há uma contagem independente salva.
     if DATABASE_URL:
-        coluna_nome = conexao.execute("""
-            SELECT 1 FROM information_schema.columns
+        colunas = conexao.execute("""
+            SELECT column_name FROM information_schema.columns
             WHERE table_schema = current_schema()
-              AND table_name = 'auditorias' AND column_name = 'nome'
-        """).fetchone()
-        if coluna_nome is None:
-            conexao.execute("""
-                ALTER TABLE auditorias ADD COLUMN IF NOT EXISTS nome VARCHAR(200)
-            """)
+              AND table_name = 'auditorias'
+        """).fetchall()
+        existentes = {coluna["column_name"] for coluna in colunas}
     else:
         colunas = conexao.execute("PRAGMA table_info(auditorias)").fetchall()
-        if not any(coluna["name"] == "nome" for coluna in colunas):
-            conexao.execute("ALTER TABLE auditorias ADD COLUMN nome VARCHAR(200)")
+        existentes = {coluna["name"] for coluna in colunas}
+
+    novas_colunas = [
+        ("nome", "VARCHAR(200)"),
+        ("prontuarios_revisados", "INTEGER"),
+        ("prontuarios_revisados_obs", "TEXT"),
+        *[(f"{campo}_nao_conformes", "INTEGER") for campo, _ in CRITERIOS],
+    ]
+    for coluna, tipo in novas_colunas:
+        if coluna not in existentes:
+            condicao = "IF NOT EXISTS " if DATABASE_URL else ""
+            conexao.execute(
+                f"ALTER TABLE auditorias ADD COLUMN {condicao}{coluna} {tipo}"
+            )
 
     conexao.execute(f"""
         CREATE TABLE IF NOT EXISTS planos_acao_auditoria (
@@ -139,27 +153,49 @@ def preparar_auditoria(registro):
         except ValueError:
             pass
         auditoria["nome"] = f"Revisão - {auditoria['setor']} - {data_texto}"[:200]
+    auditoria.update(resumir_resultados(montar_resultados(auditoria)))
     return auditoria
 
 
 def montar_resultados(auditoria):
-    total = auditoria["quantidade_prontuarios"]
     resultados = []
 
     for campo, titulo in CRITERIOS:
-        conformes = auditoria[campo]
-        nao_conformes = max(total - conformes, 0)
-        percentual = round((conformes / total) * 100, 1) if total else 0
+        conformes = auditoria.get(campo)
+        nao_conformes = auditoria.get(f"{campo}_nao_conformes")
+        if campo == "prontuarios_revisados" and conformes is None:
+            # A versão anterior guardava apenas a quantidade de prontuários,
+            # sem classificar o próprio tópico como conforme ou não conforme.
+            total = auditoria["quantidade_prontuarios"]
+            percentual = None
+        else:
+            if nao_conformes is None:
+                nao_conformes = max(auditoria["quantidade_prontuarios"] - conformes, 0)
+            total = conformes + nao_conformes
+            percentual = round(conformes / total * 100, 1) if total else None
         resultados.append({
             "campo": campo,
             "titulo": titulo,
+            "total": total,
             "conformes": conformes,
             "nao_conformes": nao_conformes,
             "percentual": percentual,
-            "observacao": auditoria[f"{campo}_obs"] or "",
+            "observacao": auditoria.get(f"{campo}_obs") or "",
         })
 
     return resultados
+
+
+def resumir_resultados(resultados):
+    conformes = sum(item["conformes"] or 0 for item in resultados)
+    nao_conformes = sum(item["nao_conformes"] or 0 for item in resultados)
+    total = conformes + nao_conformes
+    return {
+        "total_conformes": conformes,
+        "total_nao_conformes": nao_conformes,
+        "total_avaliado": total,
+        "conformidade_geral": round(conformes / total * 100, 1) if total else None,
+    }
 
 
 def carregar_detalhes_auditoria(conexao, id):
@@ -232,27 +268,21 @@ def registrar_rotas(app):
                 ORDER BY nome
             """).fetchall()
 
-            total_prontuarios = sum(
-                item["quantidade_prontuarios"] for item in registros
-            )
-            oportunidades = total_prontuarios * len(CRITERIOS)
-            total_conformes = sum(
-                sum(item[campo] for campo, _ in CRITERIOS)
-                for item in registros
-            )
-            conformidade_geral = round(
-                total_conformes / oportunidades * 100, 1
-            ) if oportunidades else 0
+            resultados_registros = [montar_resultados(item) for item in registros]
+            resumo = resumir_resultados([
+                resultado
+                for resultados in resultados_registros
+                for resultado in resultados
+            ])
 
             indicadores = []
-            for campo, titulo in CRITERIOS:
-                conformes = sum(item[campo] for item in registros)
-                percentual = round(
-                    conformes / total_prontuarios * 100, 1
-                ) if total_prontuarios else 0
+            for indice, (_, titulo) in enumerate(CRITERIOS):
+                resumo_criterio = resumir_resultados([
+                    resultados[indice] for resultados in resultados_registros
+                ])
                 indicadores.append({
                     "titulo": titulo,
-                    "percentual": percentual,
+                    "percentual": resumo_criterio["conformidade_geral"],
                 })
 
             return render_template(
@@ -262,11 +292,8 @@ def registrar_rotas(app):
                 setor_id=setor_id,
                 data_inicio=data_inicio,
                 data_fim=data_fim,
-                total_prontuarios=total_prontuarios,
-                conformidade_geral=conformidade_geral,
                 indicadores=indicadores,
-                total_conformes=total_conformes,
-                total_nao_conformes=max(oportunidades - total_conformes, 0),
+                **resumo,
             )
         finally:
             conexao.close()
@@ -291,12 +318,6 @@ def registrar_rotas(app):
                     setor_id = request.form.get("setor_id", "").strip()
                     data_auditoria = request.form.get("data", "").strip()
                     responsavel = request.form.get("responsavel", "").strip()
-                    quantidade = numero_inteiro(
-                        request.form.get("quantidade_prontuarios"),
-                        "A quantidade de prontuários",
-                        1,
-                    )
-
                     if not setor_id or not data_auditoria or not responsavel:
                         raise ValueError(
                             "Preencha a data, o setor e o responsável pela auditoria."
@@ -306,61 +327,38 @@ def registrar_rotas(app):
                     observacoes = {}
                     for campo, titulo in CRITERIOS:
                         valores[campo] = numero_inteiro(
-                            request.form.get(campo, 0),
+                            request.form.get(campo),
                             f"O total conforme de {titulo}",
                         )
-                        if valores[campo] > quantidade:
-                            raise ValueError(
-                                f"O total conforme de {titulo} não pode "
-                                "ultrapassar a quantidade de prontuários."
-                            )
+                        valores[f"{campo}_nao_conformes"] = numero_inteiro(
+                            request.form.get(f"{campo}_nao_conformes"),
+                            f"O total não conforme de {titulo}",
+                        )
                         observacoes[campo] = request.form.get(
                             f"{campo}_obs", ""
                         ).strip()
 
-                    conclusao = request.form.get("conclusao", "").strip()
+                    if not sum(valores.values()):
+                        raise ValueError("Informe pelo menos uma quantidade conforme ou não conforme no checklist.")
 
-                    consulta_insercao = """
-                        INSERT INTO auditorias (
-                            nome, setor_id, data, responsavel,
-                            quantidade_prontuarios,
-                            aprazamento_medicamentos,
-                            aprazamento_medicamentos_obs,
-                            checagem_medicamentos,
-                            checagem_medicamentos_obs,
-                            evolucao_enfermagem,
-                            evolucao_enfermagem_obs,
-                            evolucao_tecnico,
-                            evolucao_tecnico_obs,
-                            solicitacoes_farmacia,
-                            solicitacoes_farmacia_obs,
-                            solicitacoes_lavanderia,
-                            solicitacoes_lavanderia_obs,
-                            conclusao, criado_por
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """
-
+                    # Mantém a coluna original para compatibilidade; ela agora
+                    # representa somente o total do tópico de prontuários.
+                    quantidade = valores["prontuarios_revisados"] + valores["prontuarios_revisados_nao_conformes"]
+                    colunas = ["nome", "setor_id", "data", "responsavel", "quantidade_prontuarios"]
+                    parametros = [nome, setor_id, data_auditoria, responsavel, quantidade]
+                    for campo, _ in CRITERIOS:
+                        colunas.extend([campo, f"{campo}_nao_conformes", f"{campo}_obs"])
+                        parametros.extend([valores[campo], valores[f"{campo}_nao_conformes"], observacoes[campo]])
+                    colunas.extend(["conclusao", "criado_por"])
+                    parametros.extend([request.form.get("conclusao", "").strip(), session.get("usuario_id")])
+                    consulta_insercao = (
+                        f"INSERT INTO auditorias ({', '.join(colunas)}) "
+                        f"VALUES ({', '.join(['?'] * len(colunas))})"
+                    )
                     if DATABASE_URL:
                         consulta_insercao += " RETURNING id"
 
-                    cursor = conexao.execute(consulta_insercao, (
-                        nome, setor_id, data_auditoria, responsavel, quantidade,
-                        valores["aprazamento_medicamentos"],
-                        observacoes["aprazamento_medicamentos"],
-                        valores["checagem_medicamentos"],
-                        observacoes["checagem_medicamentos"],
-                        valores["evolucao_enfermagem"],
-                        observacoes["evolucao_enfermagem"],
-                        valores["evolucao_tecnico"],
-                        observacoes["evolucao_tecnico"],
-                        valores["solicitacoes_farmacia"],
-                        observacoes["solicitacoes_farmacia"],
-                        valores["solicitacoes_lavanderia"],
-                        observacoes["solicitacoes_lavanderia"],
-                        conclusao,
-                        session.get("usuario_id"),
-                    ))
+                    cursor = conexao.execute(consulta_insercao, parametros)
 
                     auditoria_id = (
                         cursor.fetchone()[0]
@@ -423,18 +421,13 @@ def registrar_rotas(app):
                 return "Auditoria não encontrada.", 404
 
             resultados = montar_resultados(auditoria)
-            conformidade_geral = round(
-                sum(item["percentual"] for item in resultados)
-                / len(resultados),
-                1,
-            ) if resultados else 0
 
             return render_template(
                 "detalhes_auditoria.html",
                 auditoria=auditoria,
                 resultados=resultados,
                 planos=planos,
-                conformidade_geral=conformidade_geral,
+                conformidade_geral=auditoria["conformidade_geral"],
                 token_auditoria=token_formulario_auditoria(),
             )
         finally:
@@ -452,11 +445,8 @@ def registrar_rotas(app):
             return "Auditoria não encontrada.", 404
 
         resultados = montar_resultados(auditoria)
-        conformidade_geral = round(
-            sum(item["percentual"] for item in resultados) / len(resultados), 1,
-        ) if resultados else 0
         arquivo = gerar_relatorio_auditoria_pdf(
-            auditoria, resultados, planos, conformidade_geral,
+            auditoria, resultados, planos, auditoria["conformidade_geral"],
         )
         resposta = send_file(
             arquivo, mimetype="application/pdf", as_attachment=False,

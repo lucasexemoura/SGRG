@@ -50,17 +50,17 @@
     <div class="dashboard-card">
         <div class="icone azul"><i class="fa-solid fa-folder-open"></i></div>
         <div>
-            <small>Prontuários revisados</small>
-            <h2>{{ auditoria['quantidade_prontuarios'] }}</h2>
+            <small>Itens avaliados</small>
+            <h2>{{ auditoria['total_avaliado'] }}</h2>
         </div>
     </div>
     <div class="dashboard-card">
-        <div class="icone {% if conformidade_geral >= 90 %}verde{% elif conformidade_geral >= 70 %}amarelo{% else %}vermelho{% endif %}">
+        <div class="icone {% if conformidade_geral is none %}azul{% elif conformidade_geral >= 90 %}verde{% elif conformidade_geral >= 70 %}amarelo{% else %}vermelho{% endif %}">
             <i class="fa-solid fa-percent"></i>
         </div>
         <div>
             <small>Conformidade geral</small>
-            <h2>{{ conformidade_geral }}%</h2>
+            <h2>{{ (conformidade_geral|string + '%') if conformidade_geral is not none else '—' }}</h2>
         </div>
     </div>
     <div class="dashboard-card">
@@ -76,7 +76,7 @@
     <div class="cabecalho-card">
         <div>
             <h2>Resultado do checklist</h2>
-            <small>Resumo quantitativo dos critérios revisados.</small>
+            <small>A conformidade geral usa a soma dos itens conformes dividida pelo total dos tópicos avaliados.</small>
         </div>
     </div>
 
@@ -84,8 +84,8 @@
         <table>
             <thead>
                 <tr>
-                    <th>Critério</th>
-                    <th>Revisados</th>
+                    <th>Tópico</th>
+                    <th>Total avaliado</th>
                     <th>Conformes</th>
                     <th>Não conformes</th>
                     <th>Conformidade</th>
@@ -96,12 +96,18 @@
                 {% for resultado in resultados %}
                     <tr>
                         <td><strong>{{ resultado['titulo'] }}</strong></td>
-                        <td>{{ auditoria['quantidade_prontuarios'] }}</td>
-                        <td>{{ resultado['conformes'] }}</td>
-                        <td>{{ resultado['nao_conformes'] }}</td>
+                        <td>{{ resultado['total'] }}</td>
+                        <td>{{ resultado['conformes'] if resultado['conformes'] is not none else '—' }}</td>
+                        <td>{{ resultado['nao_conformes'] if resultado['nao_conformes'] is not none else '—' }}</td>
                         <td>
-                            <span class="badge {% if resultado['percentual'] >= 90 %}verde{% elif resultado['percentual'] >= 70 %}amarelo{% else %}vermelho{% endif %}">
-                                {{ resultado['percentual'] }}%
+                            <span class="badge {% if resultado['percentual'] is none %}cinza{% elif resultado['percentual'] >= 90 %}verde{% elif resultado['percentual'] >= 70 %}amarelo{% else %}vermelho{% endif %}">
+                                {% if resultado['percentual'] is not none %}
+                                    {{ resultado['percentual'] }}%
+                                {% elif resultado['conformes'] is none %}
+                                    Não informado
+                                {% else %}
+                                    Sem avaliação
+                                {% endif %}
                             </span>
                         </td>
                         <td>{{ resultado['observacao'] or '—' }}</td>
@@ -110,13 +116,16 @@
             </tbody>
         </table>
     </div>
+    {% if auditoria['prontuarios_revisados'] is none %}
+        <p class="subtitulo">Neste registro, foi informada apenas a quantidade de prontuários. A conformidade desse tópico não foi registrada.</p>
+    {% endif %}
 </div>
 
 <div class="card">
     <div class="cabecalho-card">
         <div>
             <h2>Gráfico de conformidade</h2>
-            <small>Comparação percentual entre os critérios auditados.</small>
+            <small>Comparação percentual entre os tópicos avaliados, cada um com seu próprio total.</small>
         </div>
     </div>
     <div class="grafico-container grafico-horizontal">
@@ -258,7 +267,7 @@
                 label: "Conformidade (%)",
                 data: percentuais,
                 backgroundColor: percentuais.map(valor =>
-                    valor >= 90 ? "#2e7d32" : valor >= 70 ? "#fbc02d" : "#d32f2f"
+                    valor === null ? "#94a3b8" : valor >= 90 ? "#2e7d32" : valor >= 70 ? "#fbc02d" : "#d32f2f"
                 ),
                 borderRadius: 8
             }]

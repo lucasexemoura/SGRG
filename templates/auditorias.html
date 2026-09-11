@@ -8,7 +8,7 @@
     <div>
         <h1 class="titulo-pagina">Auditoria Assistencial</h1>
         <p class="subtitulo">
-            Acompanhe a conformidade dos prontuários e os planos de ação dos setores.
+            Acompanhe a conformidade de cada tópico e os planos de ação dos setores.
         </p>
     </div>
 
@@ -30,18 +30,18 @@
     <div class="dashboard-card">
         <div class="icone roxo"><i class="fa-solid fa-folder-open"></i></div>
         <div>
-            <small>Prontuários revisados</small>
-            <h2>{{ total_prontuarios }}</h2>
+            <small>Itens avaliados</small>
+            <h2>{{ total_avaliado }}</h2>
         </div>
     </div>
 
     <div class="dashboard-card">
-        <div class="icone {% if conformidade_geral >= 90 %}verde{% elif conformidade_geral >= 70 %}amarelo{% else %}vermelho{% endif %}">
+        <div class="icone {% if conformidade_geral is none %}azul{% elif conformidade_geral >= 90 %}verde{% elif conformidade_geral >= 70 %}amarelo{% else %}vermelho{% endif %}">
             <i class="fa-solid fa-percent"></i>
         </div>
         <div>
             <small>Conformidade geral</small>
-            <h2>{{ conformidade_geral }}%</h2>
+            <h2>{{ (conformidade_geral|string + '%') if conformidade_geral is not none else '—' }}</h2>
         </div>
     </div>
 </div>
@@ -98,8 +98,8 @@
     <div class="card">
         <div class="cabecalho-card">
             <div>
-                <h2>Conformidade por critério</h2>
-                <small>Percentual consolidado dos prontuários selecionados.</small>
+                <h2>Conformidade por tópico</h2>
+                <small>Cada tópico usa a soma de suas próprias quantidades conformes e não conformes.</small>
             </div>
         </div>
         <div class="grafico-container grafico-horizontal">
@@ -138,24 +138,23 @@
                         <th>Data</th>
                         <th>Setor</th>
                         <th>Responsável</th>
-                        <th>Prontuários</th>
+                        <th>Itens avaliados</th>
                         <th>Conformidade</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for auditoria in auditorias %}
-                        {% set soma = auditoria['aprazamento_medicamentos'] + auditoria['checagem_medicamentos'] + auditoria['evolucao_enfermagem'] + auditoria['evolucao_tecnico'] + auditoria['solicitacoes_farmacia'] + auditoria['solicitacoes_lavanderia'] %}
-                        {% set percentual = (soma / (auditoria['quantidade_prontuarios'] * 6) * 100)|round(1) %}
+                        {% set percentual = auditoria['conformidade_geral'] %}
                         <tr>
                             <td style="overflow-wrap: anywhere;"><strong>{{ auditoria['nome'] }}</strong></td>
                             <td>{{ auditoria['data'] }}</td>
                             <td>{{ auditoria['setor'] }}</td>
                             <td>{{ auditoria['responsavel'] }}</td>
-                            <td>{{ auditoria['quantidade_prontuarios'] }}</td>
+                            <td>{{ auditoria['total_avaliado'] }}</td>
                             <td>
-                                <span class="badge {% if percentual >= 90 %}verde{% elif percentual >= 70 %}amarelo{% else %}vermelho{% endif %}">
-                                    {{ percentual }}%
+                                <span class="badge {% if percentual is none %}cinza{% elif percentual >= 90 %}verde{% elif percentual >= 70 %}amarelo{% else %}vermelho{% endif %}">
+                                    {{ (percentual|string + '%') if percentual is not none else 'Sem avaliação' }}
                                 </span>
                             </td>
                             <td>
@@ -195,7 +194,7 @@
                 label: "Conformidade (%)",
                 data: percentuais,
                 backgroundColor: percentuais.map(valor =>
-                    valor >= 90 ? "#2e7d32" : valor >= 70 ? "#fbc02d" : "#d32f2f"
+                    valor === null ? "#94a3b8" : valor >= 90 ? "#2e7d32" : valor >= 70 ? "#fbc02d" : "#d32f2f"
                 ),
                 borderRadius: 8
             }]

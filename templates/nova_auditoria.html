@@ -8,7 +8,7 @@
     <div>
         <h1 class="titulo-pagina">Nova Auditoria</h1>
         <p class="subtitulo">
-            Informe a quantidade total revisada e quantos prontuários estavam conformes em cada critério.
+            Informe as quantidades conformes e não conformes de cada tópico, de forma independente.
         </p>
     </div>
     <a href="{{ url_for('auditorias') }}" class="btn btn-secondary">
@@ -58,20 +58,14 @@
                        value="{{ request.form.get('responsavel', usuario_nome or '') }}" required>
             </div>
 
-            <div class="grupo-formulario">
-                <label for="quantidade_prontuarios">Quantidade de prontuários revisados</label>
-                <input id="quantidade_prontuarios" type="number" name="quantidade_prontuarios"
-                       min="1" step="1" value="{{ request.form.get('quantidade_prontuarios', '') }}"
-                       placeholder="Ex.: 20" required>
-            </div>
         </div>
     </div>
 
     <div class="card">
         <div class="cabecalho-card">
             <div>
-                <h2>2. Checklist dos prontuários</h2>
-                <small>Digite somente a quantidade conforme. O sistema calcula as não conformidades e o percentual.</small>
+                <h2>2. Checklist por tópico</h2>
+                <small>Preencha as duas quantidades e as observações. Cada tópico tem seu próprio total; deixe ambas em zero quando não houver avaliação.</small>
             </div>
         </div>
 
@@ -83,7 +77,7 @@
                             <span class="criterio-numero">{{ loop.index }}</span>
                             <strong>{{ titulo }}</strong>
                         </div>
-                        <span class="badge cinza" data-percentual>0%</span>
+                        <span class="badge cinza" data-percentual>Sem avaliação</span>
                     </div>
 
                     <div class="grid-criterio">
@@ -95,8 +89,10 @@
                         </div>
 
                         <div class="grupo-formulario">
-                            <label>Quantidade não conforme</label>
-                            <input type="number" value="0" data-nao-conformes disabled>
+                            <label for="{{ campo }}_nao_conformes">Quantidade não conforme</label>
+                            <input id="{{ campo }}_nao_conformes" type="number" name="{{ campo }}_nao_conformes"
+                                   min="0" step="1" value="{{ request.form.get(campo + '_nao_conformes', '0') }}"
+                                   data-nao-conformes required>
                         </div>
 
                         <div class="grupo-formulario grupo-observacao">
@@ -177,32 +173,29 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const total = document.getElementById("quantidade_prontuarios");
         const criterios = document.querySelectorAll("[data-criterio]");
 
         function atualizarCalculos() {
-            const quantidade = Math.max(parseInt(total.value || "0", 10), 0);
-
             criterios.forEach(function (criterio) {
                 const campoConformes = criterio.querySelector("[data-conformes]");
                 const campoNaoConformes = criterio.querySelector("[data-nao-conformes]");
                 const badge = criterio.querySelector("[data-percentual]");
                 const conformes = Math.max(parseInt(campoConformes.value || "0", 10), 0);
-                const naoConformes = Math.max(quantidade - conformes, 0);
+                const naoConformes = Math.max(parseInt(campoNaoConformes.value || "0", 10), 0);
+                const quantidade = conformes + naoConformes;
                 const percentual = quantidade ? (conformes / quantidade * 100) : 0;
 
-                campoConformes.max = quantidade || "";
-                campoNaoConformes.value = naoConformes;
-                badge.textContent = percentual.toFixed(1).replace(".0", "") + "%";
+                badge.textContent = quantidade ? percentual.toFixed(1).replace(".0", "").replace(".", ",") + "%" : "Sem avaliação";
                 badge.className = "badge " + (
-                    percentual >= 90 ? "verde" : percentual >= 70 ? "amarelo" : "vermelho"
+                    !quantidade ? "cinza" : percentual >= 90 ? "verde" : percentual >= 70 ? "amarelo" : "vermelho"
                 );
             });
         }
 
-        total.addEventListener("input", atualizarCalculos);
         criterios.forEach(function (criterio) {
             criterio.querySelector("[data-conformes]")
+                .addEventListener("input", atualizarCalculos);
+            criterio.querySelector("[data-nao-conformes]")
                 .addEventListener("input", atualizarCalculos);
         });
         atualizarCalculos();
